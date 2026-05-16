@@ -20,12 +20,15 @@ export const metadata: Metadata = {
   title: 'Antbreak — Browser Games',
   description: 'Play the best browser-based games on Antbreak. No downloads, no installs.',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-    other: [
-      { rel: 'icon', sizes: '192x192', url: '/icon-192.png' },
-      { rel: 'icon', sizes: '512x512', url: '/icon-512.png' },
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
   },
   openGraph: {
     title: 'Antbreak — Play Free Browser Games',
