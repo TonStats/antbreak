@@ -635,6 +635,8 @@ smartadserver.com, 4537, RESELLER, 060d053dcf45cbf3
 rubiconproject.com, 25198, RESELLER, 0bfd66d529a55807
 # OneTag
 onetag.com, 85cae3f3f8ba0dc, DIRECT
+# Google AdSense
+google.com, pub-7287879771330318, DIRECT, f08c47fec0942fa0
 # OpenX
 openx.com, 561356040, DIRECT, 6a698e2ec38604c6
 # PGAM
