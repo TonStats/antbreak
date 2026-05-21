@@ -23,6 +23,18 @@ export default function GameEmbed({ game }: { game: Game }) {
   const { width, height } = game.iframeSettings
   const aspectRatio = width && height ? `${width} / ${height}` : '16 / 9'
 
+  // Self-hosted games (URL starts with '/') get sandbox for security.
+  // Third-party embeds (GamePix, etc.) must not be sandboxed — it blocks
+  // the referrer header that publishers use to verify the domain.
+  const isSelfHosted = game.gameUrl.startsWith('/')
+  const iframeSourceProps = isSelfHosted
+    ? ({ sandbox: 'allow-scripts allow-same-origin allow-forms' } as const)
+    : ({
+        referrerPolicy: 'no-referrer-when-downgrade' as const,
+        scrolling: 'no',
+        frameBorder: '0',
+      } as const)
+
   function startPlaying() {
     setPlaying(true)
     setLoading(true)
@@ -104,11 +116,11 @@ export default function GameEmbed({ game }: { game: Game }) {
               ref={iframeRef}
               src={game.gameUrl}
               title={game.name}
-              allow="fullscreen"
+              allow="fullscreen; autoplay; payment"
               allowFullScreen
-              sandbox="allow-scripts allow-same-origin allow-forms"
               onLoad={() => setLoading(false)}
               className="absolute inset-0 h-full w-full border-0"
+              {...iframeSourceProps}
             />
           </>
         )}
