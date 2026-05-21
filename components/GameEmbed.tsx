@@ -24,8 +24,8 @@ export default function GameEmbed({ game }: { game: Game }) {
   const aspectRatio = width && height ? `${width} / ${height}` : '16 / 9'
 
   // Self-hosted games (URL starts with '/') get sandbox for security.
-  // Third-party embeds (GamePix, etc.) must not be sandboxed — it blocks
-  // the referrer header that publishers use to verify the domain.
+  // Third-party embeds must not be sandboxed — it blocks the referrer
+  // header that publishers use to verify the domain.
   const isSelfHosted = game.gameUrl.startsWith('/')
   const iframeSourceProps = isSelfHosted
     ? ({ sandbox: 'allow-scripts allow-same-origin allow-forms' } as const)

@@ -1,7 +1,3 @@
-#gpx-property-1T9A7
-#gpx-last-updated-2024-11-21
-#gpx-reviq
-rev.iq, Kf077RYmx6XvWT8mhSbYq7LIQTU, DIRECT
 google.com, pub-6729046591418183, DIRECT, f08c47fec0942fa0
 Media.net, 8CUUN62FF, DIRECT
 openx.com, 540447780, DIRECT, 6a698e2ec38604c6
