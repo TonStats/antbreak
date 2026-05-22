@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { Download, Keyboard, Maximize2, Minimize2, RotateCcw, Trophy } from 'lucide-react'
+import { Download, Keyboard, Maximize2, Minimize2, Play, RotateCcw, Trophy } from 'lucide-react'
 import { generateText } from '@/data/typingContent'
 import type { Difficulty } from '@/data/typingContent'
 
@@ -27,14 +27,23 @@ interface Result {
   isPersonalBest: boolean
 }
 
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const DIFFICULTY_CONFIG: Record<Difficulty, { label: string; emoji: string; selectedClass: string }> = {
+  easy:   { label: 'Easy',   emoji: '🟢', selectedClass: 'bg-emerald-500 border-emerald-400 text-white font-semibold shadow-lg shadow-emerald-500/25' },
+  medium: { label: 'Medium', emoji: '🔵', selectedClass: 'bg-sky-500 border-sky-400 text-white font-semibold shadow-lg shadow-sky-500/25' },
+  hard:   { label: 'Hard',   emoji: '🟠', selectedClass: 'bg-orange-500 border-orange-400 text-white font-semibold shadow-lg shadow-orange-500/25' },
+  expert: { label: 'Expert', emoji: '🔴', selectedClass: 'bg-rose-600 border-rose-500 text-white font-semibold shadow-lg shadow-rose-500/25' },
+}
+
 // ── Pure helpers ──────────────────────────────────────────────────────────────
 
 function getGrade(wpm: number): Grade {
-  if (wpm >= 100) return { letter: 'S', label: 'Exceptional', bg: 'bg-yellow-400',  color: 'text-yellow-900', canvasColor: '#F59E0B' }
-  if (wpm >= 80)  return { letter: 'A', label: 'Advanced',    bg: 'bg-green-500',   color: 'text-white',      canvasColor: '#10B981' }
-  if (wpm >= 60)  return { letter: 'B', label: 'Proficient',  bg: 'bg-blue-500',    color: 'text-white',      canvasColor: '#3B82F6' }
-  if (wpm >= 40)  return { letter: 'C', label: 'Average',     bg: 'bg-orange-500',  color: 'text-white',      canvasColor: '#F97316' }
-  return           { letter: 'D', label: 'Developing', bg: 'bg-zinc-400',    color: 'text-white',      canvasColor: '#6B7280' }
+  if (wpm >= 100) return { letter: 'S', label: 'Exceptional', bg: 'bg-yellow-400',  color: 'text-yellow-900',  canvasColor: '#F59E0B' }
+  if (wpm >= 80)  return { letter: 'A', label: 'Advanced',    bg: 'bg-emerald-400', color: 'text-emerald-900', canvasColor: '#10B981' }
+  if (wpm >= 60)  return { letter: 'B', label: 'Proficient',  bg: 'bg-sky-400',     color: 'text-sky-900',     canvasColor: '#3B82F6' }
+  if (wpm >= 40)  return { letter: 'C', label: 'Average',     bg: 'bg-orange-400',  color: 'text-orange-900',  canvasColor: '#F97316' }
+  return           { letter: 'D', label: 'Developing', bg: 'bg-zinc-500',    color: 'text-zinc-100',    canvasColor: '#6B7280' }
 }
 
 function loadBest(difficulty: Difficulty): number {
@@ -146,7 +155,7 @@ function triggerConfetti(): () => void {
 
 export default function TypingGame() {
   const [stage,        setStage]        = useState<Stage>('setup')
-  const [difficulty,   setDifficulty]   = useState<Difficulty>('medium')
+  const [difficulty,   setDifficulty]   = useState<Difficulty>('easy')
   const [duration,     setDuration]     = useState<Duration>(30)
   const [text,         setText]         = useState('')
   const [typed,        setTyped]        = useState('')
@@ -161,7 +170,7 @@ export default function TypingGame() {
     typed:      '',
     text:       '',
     startTime:  null as number | null,
-    difficulty: 'medium' as Difficulty,
+    difficulty: 'easy' as Difficulty,
     finished:   false,
   })
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
@@ -240,7 +249,7 @@ export default function TypingGame() {
     return () => clearTimeout(t)
   }, [stage])
 
-  // Countdown timer — only ticks after user's first keystroke sets startTime
+  // Timer only ticks after first keystroke sets startTime
   useEffect(() => {
     if (!startTime || stage !== 'playing') return
     const interval = setInterval(() => setTimeLeft(prev => Math.max(prev - 1, 0)), 1000)
@@ -299,93 +308,85 @@ export default function TypingGame() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-3 py-6 sm:px-6 sm:py-10">
+    <div className="min-h-screen bg-background px-3 py-6 sm:px-6 sm:py-10">
       <div
         ref={containerRef}
-        className="relative mx-auto max-w-[800px] rounded-2xl border border-zinc-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-900 sm:p-8"
+        className="relative mx-auto w-full max-w-3xl rounded-2xl bg-slate-700 p-5 dark:bg-slate-800 sm:p-8"
+        style={{ boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.3), 0 25px 50px rgba(0, 0, 0, 0.5)' }}
       >
         {/* Fullscreen toggle */}
         <button
           onClick={toggleFullscreen}
           aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          className="absolute right-3 top-3 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
         >
-          {isFullscreen
-            ? <Minimize2 className="h-4 w-4" />
-            : <Maximize2 className="h-4 w-4" />}
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </button>
 
         {/* Title */}
-        <div className="mb-6 flex items-center justify-center gap-2.5">
-          <Keyboard className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-            Typing Speed Test
-          </h1>
+        <div className="mb-8 flex items-center justify-center gap-2.5 border-b border-slate-500 pb-6">
+          <Keyboard className="h-6 w-6 text-violet-400" />
+          <h1 className="text-3xl font-bold text-white">Typing Speed Test</h1>
         </div>
 
         {/* ────────────── STAGE 1: SETUP ────────────────────────────────── */}
         {stage === 'setup' && (
           <div className="mx-auto max-w-md">
-            <p className="mb-2.5 text-center text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
               Choose Difficulty
             </p>
-            <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {(
-                [
-                  { id: 'easy',   label: 'Easy' },
-                  { id: 'medium', label: 'Medium' },
-                  { id: 'hard',   label: 'Hard' },
-                  { id: 'expert', label: 'Expert' },
-                ] as { id: Difficulty; label: string }[]
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setDifficulty(id)}
-                  className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
-                    difficulty === id
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            <div className="mb-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(Object.keys(DIFFICULTY_CONFIG) as Difficulty[]).map((id) => {
+                const cfg = DIFFICULTY_CONFIG[id]
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setDifficulty(id)}
+                    className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                      difficulty === id
+                        ? cfg.selectedClass
+                        : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                    }`}
+                  >
+                    <span className="mr-1.5">{cfg.emoji}</span>
+                    {cfg.label}
+                  </button>
+                )
+              })}
             </div>
 
-            <p className="mb-2.5 text-center text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+            <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
               Choose Duration
             </p>
-            <div className="mb-6 grid grid-cols-3 gap-2">
+            <div className="mb-10 grid grid-cols-3 gap-2">
               {([30, 60, 120] as Duration[]).map((d) => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
-                  className={`rounded-xl py-2.5 text-sm font-semibold transition-colors ${
+                  className={`rounded-xl border px-6 py-3 text-sm font-medium transition-all ${
                     duration === d
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+                      ? 'border-amber-400 bg-amber-500 font-semibold text-white shadow-lg shadow-amber-500/25'
+                      : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                   }`}
                 >
-                  {d}s
+                  ⏱ {d}s
                 </button>
               ))}
             </div>
 
             {personalBest > 0 && (
-              <p className="mb-5 flex items-center justify-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400">
-                <Trophy className="h-4 w-4 text-yellow-500" />
-                Your best:{' '}
-                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                  {personalBest} WPM
-                </span>{' '}
-                on {difficulty}
+              <p className="mb-4 flex items-center gap-1.5 text-xs text-slate-300">
+                <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                Your best on {difficulty}:{' '}
+                <span className="font-semibold text-slate-200">{personalBest} WPM</span>
               </p>
             )}
 
             <button
               onClick={() => startGame(difficulty, duration)}
-              className="w-full rounded-xl bg-violet-600 py-3.5 text-base font-bold text-white shadow-sm transition-all hover:bg-violet-700 active:scale-[0.98]"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-4 text-lg font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all duration-200 hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
             >
+              <Play className="h-5 w-5" />
               Start Game
             </button>
           </div>
@@ -396,25 +397,25 @@ export default function TypingGame() {
           <div>
             {/* Live stats */}
             <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
-              <StatCard label="WPM"       value={liveStats.wpm}           bg="bg-blue-500" />
-              <StatCard label="Accuracy"  value={`${liveStats.accuracy}%`} bg="bg-green-500" />
-              <StatCard
+              <StatPill label="WPM"       value={liveStats.wpm}            className="border-blue-700 bg-blue-900/60 text-blue-300" />
+              <StatPill label="Accuracy"  value={`${liveStats.accuracy}%`} className="border-emerald-700 bg-emerald-900/60 text-emerald-300" />
+              <StatPill
                 label="Time Left"
                 value={`${timeLeft}s`}
-                bg={timeLeft <= 10 ? 'bg-red-500' : 'bg-orange-500'}
+                className={timeLeft <= 10 ? 'border-rose-700 bg-rose-900/60 text-rose-300' : 'border-amber-700 bg-amber-900/60 text-amber-300'}
               />
             </div>
 
-            {/* Progress bar — full until user starts typing, then drains */}
-            <div className="mb-4 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+            {/* Progress bar */}
+            <div className="mb-4 h-2 overflow-hidden rounded-full bg-zinc-700">
               <div
-                className="h-full bg-violet-600 transition-all duration-1000 ease-linear dark:bg-violet-500"
+                className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 10 && startTime ? 'bg-rose-500' : 'bg-violet-500'}`}
                 style={{ width: `${progressPct}%` }}
               />
             </div>
 
             {/* Reference text */}
-            <div className="mb-3 max-h-48 overflow-y-auto rounded-xl border border-violet-200 bg-violet-50 p-4 font-mono text-base leading-relaxed select-none dark:border-violet-800 dark:bg-violet-950/60 sm:text-lg">
+            <div className="mb-3 max-h-48 overflow-y-auto rounded-xl border border-zinc-600 bg-white p-4 font-mono text-base leading-relaxed select-none dark:bg-white dark:text-zinc-900 sm:text-lg">
               {text.split('').map((char, i) => {
                 const status = charStatus[i]
                 return (
@@ -422,10 +423,10 @@ export default function TypingGame() {
                     key={i}
                     ref={status === 'current' ? currentCharRef : undefined}
                     className={
-                      status === 'correct' ? 'text-green-500' :
-                      status === 'wrong'   ? 'text-red-500' :
-                      status === 'current' ? 'rounded-sm bg-violet-300 text-violet-900 dark:bg-violet-700 dark:text-violet-100' :
-                                            'text-zinc-400 dark:text-zinc-500'
+                      status === 'correct' ? 'text-emerald-400' :
+                      status === 'wrong'   ? 'text-rose-400 underline decoration-rose-600' :
+                      status === 'current' ? 'rounded-sm bg-violet-600 text-white' :
+                                            'text-zinc-400'
                     }
                   >
                     {char === ' ' && status === 'wrong' ? '·' : char}
@@ -439,20 +440,19 @@ export default function TypingGame() {
               ref={textareaRef}
               value={typed}
               onChange={handleTyping}
-              disabled={stage !== 'playing'}
               rows={3}
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
               autoComplete="off"
               placeholder="Type here — timer starts on your first keystroke…"
-              className="w-full resize-none rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 font-mono text-base text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-violet-400 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder:text-zinc-600 dark:focus:border-violet-500 sm:text-lg"
+              className="w-full resize-none rounded-xl border-2 border-zinc-600 bg-zinc-950 px-4 py-3 font-mono text-base text-white caret-violet-400 outline-none transition-colors placeholder:text-zinc-600 focus:border-violet-500 sm:text-lg"
             />
 
             <div className="mt-2 flex justify-end">
               <button
                 onClick={endGame}
-                className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline dark:hover:text-zinc-300"
+                className="text-xs text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline"
               >
                 End test early
               </button>
@@ -460,7 +460,7 @@ export default function TypingGame() {
           </div>
         )}
 
-        {/* ──────────────── STAGE 4: RESULTS ───────────────────────────── */}
+        {/* ────────────── STAGE 3: RESULTS ─────────────────────────────── */}
         {stage === 'finished' && result && (
           <ResultsScreen
             result={result}
@@ -477,21 +477,21 @@ export default function TypingGame() {
   )
 }
 
-// ── StatCard ──────────────────────────────────────────────────────────────────
+// ── StatPill ──────────────────────────────────────────────────────────────────
 
-function StatCard({
+function StatPill({
   label,
   value,
-  bg,
+  className,
 }: {
   label: string
   value: number | string
-  bg: string
+  className: string
 }) {
   return (
-    <div className={`${bg} rounded-xl px-3 py-2 text-center text-white`}>
+    <div className={`rounded-xl border px-3 py-2 text-center ${className}`}>
       <div className="text-xl font-bold tabular-nums sm:text-2xl">{value}</div>
-      <div className="text-xs font-medium uppercase tracking-wide opacity-80">{label}</div>
+      <div className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</div>
     </div>
   )
 }
@@ -515,8 +515,8 @@ function ResultsScreen({
   onTryDifferentMode: () => void
   onDownloadBadge: () => void
 }) {
-  const avgWpm    = 40
-  const pctDiff   = Math.round(Math.abs((result.wpm - avgWpm) / avgWpm) * 100)
+  const avgWpm     = 40
+  const pctDiff    = Math.round(Math.abs((result.wpm - avgWpm) / avgWpm) * 100)
   const comparison =
     result.wpm > avgWpm
       ? `${result.wpm} WPM — ${pctDiff}% faster than average!`
@@ -528,12 +528,12 @@ function ResultsScreen({
     <div>
       {/* Banner */}
       {showNewBest ? (
-        <div className="mb-5 flex items-center justify-center gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-800 dark:border-yellow-700/40 dark:bg-yellow-900/20 dark:text-yellow-300">
+        <div className="mb-5 flex items-center justify-center gap-2 rounded-xl border border-yellow-700/40 bg-yellow-900/20 px-4 py-3 text-yellow-300">
           <span className="text-xl">🎉</span>
           <span className="font-bold">New Personal Best!</span>
         </div>
       ) : result.grade.letter === 'D' ? (
-        <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm text-blue-700 dark:border-blue-800/40 dark:bg-blue-900/20 dark:text-blue-300">
+        <div className="mb-5 rounded-xl border border-blue-800/40 bg-blue-900/20 px-4 py-3 text-center text-sm text-blue-300">
           Keep practicing! Every expert was once a beginner.
         </div>
       ) : null}
@@ -541,12 +541,10 @@ function ResultsScreen({
       {/* WPM + grade letter */}
       <div className="mb-2 flex items-start justify-between gap-4">
         <div>
-          <div className="text-7xl font-extrabold tabular-nums text-violet-600 dark:text-violet-400 sm:text-8xl">
+          <div className="text-7xl font-bold tabular-nums text-white sm:text-8xl">
             {result.wpm}
           </div>
-          <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-            words per minute
-          </div>
+          <div className="text-sm font-medium text-zinc-400">words per minute</div>
         </div>
         <div
           className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl font-extrabold shadow-sm ${result.grade.bg} ${result.grade.color}`}
@@ -554,56 +552,50 @@ function ResultsScreen({
           {result.grade.letter}
         </div>
       </div>
-      <p className="mb-5 text-base font-semibold text-zinc-600 dark:text-zinc-300">
-        {result.grade.label}
-      </p>
+      <p className="mb-5 text-base font-semibold text-zinc-300">{result.grade.label}</p>
 
       {/* Stats grid */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MiniStat label="Accuracy"     value={`${result.accuracy}%`} />
-        <MiniStat label="Errors"       value={String(result.errors)} />
-        <MiniStat label="Words Typed"  value={String(result.wordsTyped)} />
-        <MiniStat
-          label="Personal Best"
-          value={`${personalBest} WPM`}
-          highlight={showNewBest}
-        />
+        <MiniStat label="Accuracy"    value={`${result.accuracy}%`} />
+        <MiniStat label="Errors"      value={String(result.errors)} />
+        <MiniStat label="Words Typed" value={String(result.wordsTyped)} />
+        <MiniStat label="Personal Best" value={`${personalBest} WPM`} highlight={showNewBest} />
       </div>
 
       {/* Comparison */}
-      <div className="mb-6 rounded-xl bg-zinc-50 px-4 py-3 text-sm dark:bg-zinc-800">
-        <p className="text-zinc-500 dark:text-zinc-400">
-          Average typist types{' '}
-          <span className="font-medium text-zinc-700 dark:text-zinc-200">40 WPM</span>
+      <div className="mb-6 rounded-xl bg-zinc-800 px-4 py-3 text-sm">
+        <p className="text-zinc-400">
+          Average typist types <span className="font-medium text-zinc-200">40 WPM</span>
         </p>
-        <p className="font-medium text-zinc-700 dark:text-zinc-200">
-          You typed {comparison}
-        </p>
+        <p className="font-medium text-zinc-200">You typed {comparison}</p>
       </div>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
         <button
           onClick={onPlayAgain}
-          className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-500 hover:to-purple-500"
         >
           <RotateCcw className="h-4 w-4" />
           Play Again
         </button>
         <button
           onClick={onDownloadBadge}
-          className="flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-5 py-2.5 text-sm font-semibold text-violet-700 transition-colors hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-300 dark:hover:bg-violet-900/50"
+          className="flex items-center gap-2 rounded-xl border border-zinc-600 bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-zinc-300 transition-colors hover:bg-zinc-700"
         >
           <Download className="h-4 w-4" />
           Download Badge
         </button>
         <button
           onClick={onTryDifferentMode}
-          className="rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+          className="rounded-xl border border-zinc-600 bg-zinc-800 px-5 py-2.5 text-sm font-semibold text-zinc-300 transition-colors hover:bg-zinc-700"
         >
           Try Different Mode
         </button>
       </div>
+
+      {/* Suppress unused prop warning */}
+      <span className="sr-only">{difficulty}</span>
     </div>
   )
 }
@@ -623,14 +615,14 @@ function MiniStat({
     <div
       className={`rounded-xl border px-3 py-2 text-center ${
         highlight
-          ? 'border-yellow-300 bg-yellow-50 dark:border-yellow-700/40 dark:bg-yellow-900/20'
-          : 'border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800'
+          ? 'border-yellow-700/40 bg-yellow-900/20'
+          : 'border-zinc-700 bg-zinc-800'
       }`}
     >
-      <div className="text-base font-bold tabular-nums text-zinc-900 dark:text-zinc-100 sm:text-lg">
+      <div className={`text-base font-bold tabular-nums sm:text-lg ${highlight ? 'text-yellow-300' : 'text-white'}`}>
         {value}
       </div>
-      <div className="text-xs text-zinc-500 dark:text-zinc-400">{label}</div>
+      <div className="text-xs text-zinc-400">{label}</div>
     </div>
   )
 }
