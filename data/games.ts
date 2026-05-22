@@ -164,6 +164,36 @@ export const GAMES: Game[] = [
     iframeSettings: { width: 800, height: 600, allowFullscreen: true },
   },
   {
+    id: 'chess',
+    name: 'Chess',
+    slug: 'chess',
+    category: 'original-games',
+    description:
+      'Play chess against an AI opponent with three difficulty levels. Easy for beginners, ' +
+      'Medium for casual players, Hard for a real challenge. Track your moves, undo mistakes, ' +
+      'and save your game automatically.',
+    howToPlay: [
+      'Select difficulty and choose to play as White or Black',
+      'Click a piece to select it and see legal moves highlighted',
+      'Click a highlighted square to move your piece',
+      'Capture the opponent king to win — checkmate ends the game',
+      'Use Undo Move to take back your last move if needed',
+    ],
+    tips: [
+      'Control the center — place pawns and knights on d4, d5, e4, e5',
+      'Develop your pieces early — get knights and bishops out before the queen',
+      'King safety is critical — castle early to protect your king',
+    ],
+    thumbnail: '/thumbnails/chess.webp',
+    gameUrl: '/games/chess',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    dateAdded: '2026-05-22',
+    tags: ['chess', 'strategy', 'board', 'ai', 'classic'],
+    iframeSettings: { width: 960, height: 600, allowFullscreen: true },
+  },
+  {
     id: 'typing-speed-test',
     name: 'Typing Speed Test',
     slug: 'typing-speed-test',
