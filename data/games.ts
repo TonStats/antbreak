@@ -163,4 +163,33 @@ export const GAMES: Game[] = [
     tags: ['racing', 'retro', 'pixel-art', 'arcade', 'top-down'],
     iframeSettings: { width: 800, height: 600, allowFullscreen: true },
   },
+  {
+    id: 'typing-speed-test',
+    name: 'Typing Speed Test',
+    slug: 'typing-speed-test',
+    category: 'original-games',
+    description:
+      'Test and improve your typing speed with real-time WPM tracking. Choose from Easy words, ' +
+      'Medium sentences, Hard code snippets, or Expert prose. Track your accuracy and challenge your personal best.',
+    howToPlay: [
+      'Select your difficulty and timer duration',
+      'Click the typing area or start typing to begin the timer',
+      'Type the displayed text as accurately and quickly as possible',
+      'See your WPM, accuracy and time left update in real time',
+      'Review your results and grade when the timer ends',
+    ],
+    tips: [
+      'Focus on accuracy first — errors hurt your WPM more than slowness',
+      'Keep your eyes on the reference text, not your keyboard',
+      'Start with Easy mode to build muscle memory before moving to Medium',
+    ],
+    thumbnail: '/thumbnails/typing-speed-test.webp',
+    gameUrl: '/games/typing-speed-test',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    dateAdded: '2026-05-22',
+    tags: ['typing', 'wpm', 'speed', 'keyboard', 'skill', 'words'],
+    iframeSettings: { width: 960, height: 600, allowFullscreen: false },
+  },
 ]
