@@ -102,10 +102,10 @@ export default async function GamePage({
         }}
       />
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-        {/* ── Breadcrumb ─────────────────────────────────────────── */}
-        <nav aria-label="Breadcrumb" className="mb-4">
+        {/* ── Breadcrumb — 32px row ──────────────────────────────── */}
+        <nav aria-label="Breadcrumb" className="py-2">
           <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
             <li>
               <Link href="/" className="transition-colors hover:text-zinc-800 dark:hover:text-zinc-200">
@@ -136,20 +136,16 @@ export default async function GamePage({
           </ol>
         </nav>
 
-        {/* ── Page title ─────────────────────────────────────────── */}
-        <h1 className="mb-6 text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-          {game.name}
-        </h1>
+        {/* ── Game embed — fills remaining viewport ─────────────── */}
+        <GameEmbed game={game} />
 
-        {/* ── Main content ───────────────────────────────────────── */}
-        <div className="space-y-10">
+        {/* ── Below-fold content — user scrolls to reach ────────── */}
+        <div className="mt-8 space-y-10 pb-10">
 
-            {/* Leaderboard ad — above game embed */}
-            {/* AdSense Leaderboard — insert ad unit here */}
-            <AdBanner size="leaderboard" />
-
-            {/* Game embed */}
-            <GameEmbed game={game} />
+            {/* Page title */}
+            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
+              {game.name}
+            </h1>
 
             {/* How to Play */}
             {game.howToPlay.length > 0 && (
@@ -200,6 +196,10 @@ export default async function GamePage({
                 {game.description}
               </p>
             </section>
+
+            {/* Leaderboard ad */}
+            {/* AdSense Leaderboard — insert ad unit here */}
+            <AdBanner size="leaderboard" />
 
             {/* You Might Also Like */}
             {related.length > 0 && (

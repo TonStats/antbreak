@@ -30,8 +30,8 @@ export default function GameEmbed({ game }: { game: Game }) {
     } catch { /* */ }
   }
 
-  const { width, height } = game.iframeSettings
-  const aspectRatio = width && height ? `${width} / ${height}` : '16 / 9'
+  // Game container fills the viewport below header (56px) + breadcrumb (~32px) + controls (40px) = 128px
+  const GAME_HEIGHT = 'calc(100vh - 128px)'
 
   // Self-hosted games (URL starts with '/') get sandbox for security.
   // Third-party embeds must not be sandboxed — it blocks the referrer
@@ -80,7 +80,11 @@ export default function GameEmbed({ game }: { game: Game }) {
       {/* ── Game frame ───────────────────────────────────────────── */}
       <div
         className="relative w-full overflow-hidden rounded-2xl bg-zinc-900"
-        style={fillMode ? { height: '70vh' } : { aspectRatio }}
+        style={{
+          height: fillMode ? 'calc(100vh - 80px)' : GAME_HEIGHT,
+          minHeight: '400px',
+          maxHeight: '800px',
+        }}
       >
         {!playing ? (
           <>
@@ -136,8 +140,8 @@ export default function GameEmbed({ game }: { game: Game }) {
         )}
       </div>
 
-      {/* ── Controls — always visible, dimmed before playing ────────────── */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* ── Controls — 40px row ─────────────────────────────────────────── */}
+      <div className="flex h-10 items-center gap-2 overflow-x-auto">
         <div
           className={`flex items-center gap-2 transition-opacity ${!playing ? 'opacity-40' : ''}`}
           title={!playing ? 'Controls appear after clicking Play' : undefined}

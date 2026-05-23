@@ -10,7 +10,7 @@ export default function Home() {
     <div className="flex flex-col">
 
       {/* ── Category nav ──────────────────────────────────────────────────── */}
-      <div className="sticky top-16 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+      <div className="sticky top-14 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
         <CategoryNav />
       </div>
 
