@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Play, Maximize2, Loader2, AlertTriangle, X, Heart, Share2 } from 'lucide-react'
+import { Play, Maximize2, Loader2, Heart, Share2, Star } from 'lucide-react'
 import { useUser } from '@/context/UserContext'
 import type { Game, Category } from '@/types/game'
 
@@ -14,22 +14,36 @@ const BTN_BASE = 'flex w-full items-center justify-center gap-2 rounded-xl borde
 const BTN_DEFAULT = `${BTN_BASE} border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700`
 
 export default function GameEmbed({ game, category }: { game: Game; category?: Category }) {
-  const [playing, setPlaying]                 = useState(false)
-  const [loading, setLoading]                 = useState(false)
-  const [imgFailed, setImgFailed]             = useState(false)
-  const [reportOpen, setReportOpen]           = useState(false)
-  const [reportText, setReportText]           = useState('')
-  const [reportSubmitted, setReportSubmitted] = useState(false)
-  const [copied, setCopied]                   = useState(false)
-  const [showMore, setShowMore]               = useState(false)
-  const iframeRef                             = useRef<HTMLIFrameElement>(null)
+  const [playing, setPlaying]     = useState(false)
+  const [loading, setLoading]     = useState(false)
+  const [imgFailed, setImgFailed] = useState(false)
+  const [copied, setCopied]       = useState(false)
+  const [showMore, setShowMore]   = useState(false)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [userRating, setUserRating]   = useState(0)
+  const [avgRating, setAvgRating]     = useState(0)
+  const [avgCount, setAvgCount]       = useState(0)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
   const { addToHistory, favorites, toggleFavorite } = useUser()
   const favorited = favorites.includes(game.slug)
 
   const { width, height } = game.iframeSettings
 
-  // Self-hosted games get sandbox for security.
-  // Third-party embeds must not be sandboxed — it blocks the referrer header.
+  useEffect(() => {
+    const saved = localStorage.getItem(`rating_${game.slug}`)
+    if (saved) setUserRating(Number(saved))
+
+    fetch(`/api/rate-game?slug=${encodeURIComponent(game.slug)}`)
+      .then((r) => r.json())
+      .then((data: { average: number; count: number }) => {
+        if (data.count > 0) {
+          setAvgRating(data.average)
+          setAvgCount(data.count)
+        }
+      })
+      .catch(() => {})
+  }, [game.slug])
+
   const isSelfHosted = game.gameUrl.startsWith('/')
   const iframeSourceProps = isSelfHosted
     ? ({ sandbox: 'allow-scripts allow-same-origin allow-forms' } as const)
@@ -60,21 +74,22 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
     } catch { /* */ }
   }
 
-  async function handleReport() {
-    if (!reportText.trim()) return
+  async function handleRate(stars: number) {
+    setUserRating(stars)
+    localStorage.setItem(`rating_${game.slug}`, String(stars))
     try {
-      await fetch('/api/report-game', {
+      await fetch('/api/rate-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: game.slug, description: reportText }),
+        body: JSON.stringify({ slug: game.slug, rating: stars, gameTitle: game.name }),
       })
+      const r = await fetch(`/api/rate-game?slug=${encodeURIComponent(game.slug)}`)
+      const data: { average: number; count: number } = await r.json()
+      if (data.count > 0) {
+        setAvgRating(data.average)
+        setAvgCount(data.count)
+      }
     } catch {}
-    setReportText('')
-    setReportSubmitted(true)
-    setTimeout(() => {
-      setReportSubmitted(false)
-      setReportOpen(false)
-    }, 2000)
   }
 
   return (
@@ -82,7 +97,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
       {/* ── Two-column layout ─────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-4">
 
-        {/* ── Left: game frame — fills available column width, maintains ratio ── */}
+        {/* ── Left: game frame ─────────────────────────────────────────────── */}
         <div className="min-w-0 flex-1">
           <div
             className="relative mx-auto w-full overflow-hidden rounded-2xl bg-zinc-900"
@@ -147,7 +162,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
           </div>
         </div>
 
-        {/* ── Right: sidebar — 280px on desktop, full width on mobile ─────── */}
+        {/* ── Right: sidebar ───────────────────────────────────────────────── */}
         <aside className="w-full shrink-0 lg:w-[280px]">
 
           {/* Game name */}
@@ -207,6 +222,44 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
 
           <hr className="my-4 border-zinc-200 dark:border-zinc-700" />
 
+          {/* Star rating */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              {userRating > 0 ? `Your rating: ${userRating}/5` : 'Rate this game'}
+            </p>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const filled = star <= (hoverRating || userRating)
+                return (
+                  <button
+                    key={star}
+                    type="button"
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => handleRate(star)}
+                    aria-label={`Rate ${star} out of 5 stars`}
+                    className="transition-colors"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${
+                        filled
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-zinc-300 dark:text-zinc-600'
+                      }`}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+            {avgCount > 0 && (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                {avgRating.toFixed(1)} ★ ({avgCount} {avgCount === 1 ? 'rating' : 'ratings'})
+              </p>
+            )}
+          </div>
+
+          <hr className="my-4 border-zinc-200 dark:border-zinc-700" />
+
           {/* Short description with Read more toggle */}
           {game.description && (
             <div>
@@ -224,83 +277,8 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
               )}
             </div>
           )}
-
-          {/* Report */}
-          <button
-            type="button"
-            onClick={() => setReportOpen(true)}
-            disabled={!playing}
-            className="mt-4 flex items-center gap-1 text-xs text-zinc-400 transition-colors hover:text-zinc-600 disabled:cursor-not-allowed dark:hover:text-zinc-200"
-          >
-            <AlertTriangle className="h-3 w-3" />
-            Report a problem
-          </button>
         </aside>
       </div>
-
-      {/* ── Report Modal ─────────────────────────────────────────────────── */}
-      {reportOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setReportOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-zinc-900"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
-                Report a Problem
-              </h3>
-              <button
-                onClick={() => setReportOpen(false)}
-                className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {reportSubmitted ? (
-              <p className="py-4 text-center text-sm font-medium text-green-600 dark:text-green-400">
-                Thanks for your report!
-              </p>
-            ) : (
-              <>
-                <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-                  Describe the issue with{' '}
-                  <strong className="font-medium text-zinc-700 dark:text-zinc-300">
-                    {game.name}
-                  </strong>:
-                </p>
-                <textarea
-                  value={reportText}
-                  onChange={(e) => setReportText(e.target.value)}
-                  placeholder="e.g. Game doesn't load, audio issues, broken controls…"
-                  rows={4}
-                  className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:placeholder-zinc-500"
-                />
-                <div className="mt-4 flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setReportOpen(false)}
-                    className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleReport}
-                    disabled={!reportText.trim()}
-                    className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400"
-                  >
-                    Submit
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </>
   )
 }
