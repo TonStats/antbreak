@@ -250,11 +250,6 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
                 )
               })}
             </div>
-            {userRating > 0 ? (
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Your rating: {userRating}/5 — click same star to remove
-              </p>
-            ) : null}
             {avgCount > 0 && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {avgRating.toFixed(1)} ★ ({avgCount} {avgCount === 1 ? 'rating' : 'ratings'})

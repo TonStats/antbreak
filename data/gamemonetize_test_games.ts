@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────
 // GAMEMONETIZE TEST GAMES
-// Generated: 2026-05-23 | Count: 11
+// Generated: 2026-05-23 | Count: 9
 // ─────────────────────────────────────────────────────
 
 import type { Game } from '../types/game'
@@ -110,33 +110,7 @@ export const GAMEMONETIZE_TEST_GAMES: Game[] = [
     },
   },
 
-  // 5. Urban Echo
-  {
-    id: 204,
-    name: `Urban Echo`,
-    slug: `urban-echo`,
-    category: `action-arcade`,
-    description: `Urban Echo is an exciting action parkour game where you control a character to overcome obstacles in an urban environment. Run, jump, slide, and climb walls to cross rooftops, avoid traps, and maintain a high pace. Time your moves precisely, chain smooth combos to go further. The gameplay is simple but addictive, testing reflexes and skills.`,
-    howToPlay: [],
-    tips: [],
-    thumbnail: `https://img.gamemonetize.com/x6ec3zk1a76zhzjz4ztnyg1dw157pppv/512x340.jpg`,
-    gameUrl: `https://html5.gamemonetize.co/x6ec3zk1a76zhzjz4ztnyg1dw157pppv/`,
-    playCount: 14717,
-    featured: false,
-    isOriginal: false,
-    source: 'gamemonetize',
-    dateAdded: '2026-05-23',
-    tags: ["urban", "echo", "action", "free", "browser", "online"],
-    iframeSettings: {
-      width: 1920,
-      height: 1080,
-      aspectRatio: '16:9',
-      paddingTop: '56.25%',
-      allowFullscreen: true,
-    },
-  },
-
-  // 6. Going Rolling Ball
+  // 5. Going Rolling Ball
   {
     id: 205,
     name: `Going Rolling Ball`,
@@ -162,7 +136,7 @@ export const GAMEMONETIZE_TEST_GAMES: Game[] = [
     },
   },
 
-  // 7. World Archery League
+  // 6. World Archery League
   {
     id: 206,
     name: `World Archery League`,
@@ -188,7 +162,7 @@ export const GAMEMONETIZE_TEST_GAMES: Game[] = [
     },
   },
 
-  // 8. Throw Sword
+  // 7. Throw Sword
   {
     id: 207,
     name: `Throw Sword`,
@@ -214,7 +188,7 @@ export const GAMEMONETIZE_TEST_GAMES: Game[] = [
     },
   },
 
-  // 9. Dream Football Game
+  // 8. Dream Football Game
   {
     id: 208,
     name: `Dream Football Game`,
@@ -241,33 +215,7 @@ Press K For Sprint Press N For ShortPass Press M For LongPass Press Space For Sh
     },
   },
 
-  // 10. Mini Pool 3D
-  {
-    id: 209,
-    name: `Mini Pool 3D`,
-    slug: `mini-pool-3d`,
-    category: `sports-racing`,
-    description: `Pocket all the balls in this fun and colorful 3D pool game! Choose between Classic free play, 20 Arcade levels, or race against the clock in Time Attack mode. Easy to play, hard to master!`,
-    howToPlay: [],
-    tips: [],
-    thumbnail: `https://img.gamemonetize.com/ehi2vjrem0ya35imcjiofupvjerb5mhr/512x340.jpg`,
-    gameUrl: `https://html5.gamemonetize.co/ehi2vjrem0ya35imcjiofupvjerb5mhr/`,
-    playCount: 8674,
-    featured: false,
-    isOriginal: false,
-    source: 'gamemonetize',
-    dateAdded: '2026-05-23',
-    tags: ["mini", "pool", "sports", "free", "browser", "online"],
-    iframeSettings: {
-      width: 800,
-      height: 600,
-      aspectRatio: '4:3',
-      paddingTop: '75.00%',
-      allowFullscreen: true,
-    },
-  },
-
-  // 11. Super Poker
+  // 9. Super Poker
   {
     id: 210,
     name: `Super Poker`,
