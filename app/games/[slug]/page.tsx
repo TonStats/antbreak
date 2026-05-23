@@ -72,7 +72,7 @@ export default async function GamePage({
   if (!game) notFound()
 
   const category = CATEGORIES.find((c) => c.id === game.category)
-  const related  = getRelatedGames(game.id, 3)
+  const related  = getRelatedGames(String(game.id), 3)
 
   // JSON-LD — VideoGame schema
   const jsonLd = {

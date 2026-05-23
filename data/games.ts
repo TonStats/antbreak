@@ -1,4 +1,5 @@
 import type { Game } from '@/types/game'
+import { GAMEMONETIZE_TEST_GAMES } from './gamemonetize_test_games'
 
 export const GAMES: Game[] = [
   {
@@ -90,4 +91,5 @@ export const GAMES: Game[] = [
     tags: ['typing', 'wpm', 'speed', 'keyboard', 'skill', 'words'],
     iframeSettings: { width: 960, height: 600, allowFullscreen: false },
   },
+  ...GAMEMONETIZE_TEST_GAMES,
 ]
