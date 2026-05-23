@@ -8,7 +8,6 @@ import { CATEGORIES } from '@/data/categories'
 import { getGameBySlug, getRelatedGames } from '@/lib/gameUtils'
 import GameCard from '@/components/GameCard'
 import GameEmbed from '@/components/GameEmbed'
-import GameSidebar from '@/components/GameSidebar'
 import AdBanner from '@/components/AdBanner'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,11 +141,8 @@ export default async function GamePage({
           {game.name}
         </h1>
 
-        {/* ── Two-column layout ──────────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_300px]">
-
-          {/* ════ MAIN CONTENT ════════════════════════════════════ */}
-          <div className="min-w-0 space-y-10">
+        {/* ── Main content ───────────────────────────────────────── */}
+        <div className="space-y-10">
 
             {/* Leaderboard ad — above game embed */}
             {/* AdSense Leaderboard — insert ad unit here */}
@@ -232,10 +228,6 @@ export default async function GamePage({
             {/* Responsive ad — below related games */}
             {/* AdSense Responsive — insert ad unit here */}
             <AdBanner size="responsive" />
-          </div>
-
-          {/* ════ SIDEBAR ════════════════════════════════════════ */}
-          <GameSidebar game={game} category={category} />
         </div>
       </div>
     </>

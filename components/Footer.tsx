@@ -3,7 +3,7 @@ import { Gamepad2 } from 'lucide-react'
 
 const SITE_LINKS = [
   { label: 'Home',        href: '/' },
-  { label: 'Games',       href: '/games' },
+  { label: 'Games',       href: '/browse' },
   { label: 'Favorites',   href: '/favorites' },
   { label: 'Blog',        href: '/blog' },
 ]

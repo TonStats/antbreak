@@ -65,15 +65,6 @@ export const CATEGORIES: Category[] = [
     textColor: 'text-white',
   },
   {
-    id: 'daily-challenges',
-    name: 'Daily Challenges',
-    slug: 'daily-challenges',
-    description: 'A new challenge every day — come back and keep your streak alive',
-    icon: 'CalendarDays',
-    color: 'bg-pink-500',
-    textColor: 'text-white',
-  },
-  {
     id: 'original-games',
     name: 'Original Games',
     slug: 'original-games',

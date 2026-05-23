@@ -36,12 +36,6 @@ export function getRelatedGames(gameId: string, limit = 4): Game[] {
     .slice(0, limit)
 }
 
-export function getDailyGame(): Game {
-  const today = new Date()
-  const seed =
-    today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
-  return GAMES[seed % GAMES.length]
-}
 
 const fuse = new Fuse(GAMES, {
   keys: [

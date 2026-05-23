@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { UserProvider } from '@/context/UserContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import LayoutCategoryNav from '@/components/LayoutCategoryNav'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -70,6 +71,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <UserProvider>
             <Header />
+            <LayoutCategoryNav />
             <main className="flex-1">{children}</main>
             <Footer />
           </UserProvider>

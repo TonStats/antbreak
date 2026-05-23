@@ -1,19 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import ChessGame from './ChessGame'
+import SudokuGame from './SudokuGame'
 import OriginalGameActions from '@/components/OriginalGameActions'
 import { GAMES } from '@/data/games'
 
-const game = GAMES.find(g => g.id === 'chess')!
+const game = GAMES.find(g => g.id === 'sudoku')!
 
 export const metadata: Metadata = {
-  title: 'Chess — Play Free Online Chess vs AI | Antbreak',
+  title: 'Sudoku — Free Daily Puzzle | Antbreak',
   description:
-    'Play free online chess against an AI opponent. Choose Easy, Medium or Hard difficulty. No download, no signup required.',
+    'Play free Sudoku online with Easy, Medium and Hard difficulties. New daily puzzle every day. No download required.',
 }
 
-export default function ChessPage() {
+export default function SudokuPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
@@ -22,13 +22,13 @@ export default function ChessPage() {
         <ChevronRight className="h-3.5 w-3.5" />
         <Link href="/games/category/original-games" className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Original Games</Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-zinc-900 dark:text-zinc-100">Chess</span>
+        <span className="text-zinc-900 dark:text-zinc-100">Sudoku</span>
       </nav>
 
-      <ChessGame />
+      <SudokuGame />
 
       <div className="mt-6 pb-12">
-        <OriginalGameActions slug="chess" />
+        <OriginalGameActions slug="sudoku" />
 
         {game.howToPlay.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-6 mt-6">

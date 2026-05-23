@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { Play, Maximize, Maximize2, Minimize, Loader2, AlertTriangle, X } from 'lucide-react'
+import { Play, Maximize, Maximize2, Minimize, Loader2, AlertTriangle, X, Heart, Share2 } from 'lucide-react'
 import { useUser } from '@/context/UserContext'
 import type { Game } from '@/types/game'
 
@@ -17,8 +17,18 @@ export default function GameEmbed({ game }: { game: Game }) {
   const [reportOpen, setReportOpen]           = useState(false)
   const [reportText, setReportText]           = useState('')
   const [reportSubmitted, setReportSubmitted] = useState(false)
+  const [copied, setCopied]                   = useState(false)
   const iframeRef                             = useRef<HTMLIFrameElement>(null)
-  const { addToHistory }                      = useUser()
+  const { addToHistory, favorites, toggleFavorite } = useUser()
+  const favorited = favorites.includes(game.slug)
+
+  async function handleShare() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { /* */ }
+  }
 
   const { width, height } = game.iframeSettings
   const aspectRatio = width && height ? `${width} / ${height}` : '16 / 9'
@@ -127,32 +137,59 @@ export default function GameEmbed({ game }: { game: Game }) {
       </div>
 
       {/* ── Controls — always visible, dimmed before playing ────────────── */}
-      <div
-        className={`flex items-center gap-2 transition-opacity ${!playing ? 'opacity-40' : ''}`}
-        title={!playing ? 'Controls appear after clicking Play' : undefined}
-      >
+      <div className="flex flex-wrap items-center gap-2">
+        <div
+          className={`flex items-center gap-2 transition-opacity ${!playing ? 'opacity-40' : ''}`}
+          title={!playing ? 'Controls appear after clicking Play' : undefined}
+        >
+          <button
+            type="button"
+            onClick={handleFullscreen}
+            disabled={!playing}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            aria-label="Enter fullscreen"
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            Fullscreen
+          </button>
+          <button
+            type="button"
+            onClick={() => setFillMode((m) => !m)}
+            disabled={!playing}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            {fillMode ? (
+              <><Minimize className="h-3.5 w-3.5" />Fix Ratio</>
+            ) : (
+              <><Maximize className="h-3.5 w-3.5" />Fill Screen</>
+            )}
+          </button>
+        </div>
+
+        {/* Favorites + Share — always clickable */}
         <button
           type="button"
-          onClick={handleFullscreen}
-          disabled={!playing}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          aria-label="Enter fullscreen"
+          onClick={() => toggleFavorite(game.slug)}
+          aria-pressed={favorited}
+          className={[
+            'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+            favorited
+              ? 'border-red-600 bg-red-500 text-white hover:bg-red-600'
+              : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800',
+          ].join(' ')}
         >
-          <Maximize2 className="h-3.5 w-3.5" />
-          Fullscreen
+          <Heart className={`h-3.5 w-3.5 ${favorited ? 'fill-white stroke-white' : ''}`} />
+          {favorited ? 'Saved' : 'Favorite'}
         </button>
         <button
           type="button"
-          onClick={() => setFillMode((m) => !m)}
-          disabled={!playing}
-          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          onClick={handleShare}
+          className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          {fillMode ? (
-            <><Minimize className="h-3.5 w-3.5" />Fix Ratio</>
-          ) : (
-            <><Maximize className="h-3.5 w-3.5" />Fill Screen</>
-          )}
+          <Share2 className="h-3.5 w-3.5" />
+          {copied ? 'Copied!' : 'Share'}
         </button>
+
         <button
           type="button"
           onClick={() => setReportOpen(true)}

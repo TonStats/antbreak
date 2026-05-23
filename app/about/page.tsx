@@ -77,8 +77,8 @@ export default function AboutPage() {
             {[
               {
                 icon: <LayoutGrid className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />,
-                title: 'Nine game categories',
-                body: 'Action & Arcade, Puzzle & Logic, Word & Language, Numbers & Math, Trivia & Knowledge, Sports & Racing, Board & Card, Daily Challenges, and Antbreak Originals.',
+                title: 'Eight game categories',
+                body: 'Action & Arcade, Puzzle & Logic, Word & Language, Numbers & Math, Trivia & Knowledge, Sports & Racing, Board & Card, and Antbreak Originals.',
               },
               {
                 icon: <Sparkles className="h-4 w-4 shrink-0 text-indigo-500" />,

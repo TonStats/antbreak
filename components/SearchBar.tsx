@@ -80,7 +80,7 @@ export default function SearchBar({ autoFocus }: SearchBarProps) {
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             onFocus={() => query && setOpen(true)}
-            placeholder="Search games…"
+            placeholder="Search games..."
             className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2 pl-9 pr-8 text-sm outline-none placeholder:text-zinc-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-brand-400"
           />
           {query && (

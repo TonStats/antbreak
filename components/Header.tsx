@@ -2,21 +2,21 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { Gamepad2, Moon, Sun, Menu, X, Search } from 'lucide-react'
 import SearchBar from './SearchBar'
 
 const NAV_ITEMS = [
   { label: 'Home', href: '/' },
-  { label: 'Games', href: '/games' },
-  { label: 'Leaderboard', href: '/leaderboard' },
-  { label: 'About', href: '/about' },
+  { label: 'Games', href: '/browse' },
 ]
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
+  const pathname = usePathname()
 
   function toggleTheme() {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -33,6 +33,27 @@ export default function Header() {
           <Gamepad2 className="h-6 w-6" />
           <span className="text-xl tracking-tight">Antbreak</span>
         </Link>
+
+        {/* Desktop nav links */}
+        <nav className="hidden items-center gap-0.5 md:flex">
+          {NAV_ITEMS.map(({ label, href }) => {
+            const isActive = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
+            return (
+              <Link
+                key={label}
+                href={href}
+                className={[
+                  'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                    : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100',
+                ].join(' ')}
+              >
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
 
         {/* Search bar — desktop only */}
         <div className="hidden flex-1 justify-center md:flex">
@@ -88,17 +109,25 @@ export default function Header() {
       {menuOpen && (
         <nav className="border-t border-zinc-200 px-4 pb-4 pt-3 dark:border-zinc-800 md:hidden">
           <ul className="space-y-0.5">
-            {NAV_ITEMS.map(({ label, href }) => (
-              <li key={label}>
-                <Link
-                  href={href}
-                  className="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
+            {NAV_ITEMS.map(({ label, href }) => {
+              const isActive = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
+              return (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className={[
+                      'block rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                        : 'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800',
+                    ].join(' ')}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {label}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
       )}

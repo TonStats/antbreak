@@ -26,6 +26,23 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Sudoku grid border colors — theme-aware via CSS custom properties */
+:root {
+  --sudoku-cell-border: #d1d5db;
+  --sudoku-box-border:  #374151;
+}
+.dark {
+  --sudoku-cell-border: #52525b;
+  --sudoku-box-border:  #9ca3af;
+}
+
+/* Shake animation for wrong Sudoku cell entries */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
 /* Custom utility — Tailwind v4 @utility syntax */
 @utility scrollbar-hidden {
   scrollbar-width: none;

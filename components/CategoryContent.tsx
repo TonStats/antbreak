@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useState } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronDown } from 'lucide-react'
 import GameCard from '@/components/GameCard'
@@ -41,9 +42,11 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 export default function CategoryContent({
   games,
   category,
+  icon,
 }: {
   games: Game[]
   category: Category
+  icon?: ReactNode
 }) {
   const [sort, setSort] = useState<SortKey>('popular')
   const sorted = sortGames(games, sort)
@@ -51,15 +54,21 @@ export default function CategoryContent({
 
   return (
     <>
-      {/* Sort / count bar */}
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {sorted.length === 0
-            ? 'No games yet'
-            : `Showing ${sorted.length} game${sorted.length === 1 ? '' : 's'}`}
-        </p>
+      {/* Category banner — name left, sort right */}
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          {icon}
+          <div>
+            <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+              {category.name}
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {category.description}
+            </p>
+          </div>
+        </div>
 
-        <div className="relative">
+        <div className="relative shrink-0">
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}

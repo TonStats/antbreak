@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Chess, type Move, type Square, type PieceSymbol } from 'chess.js'
-import { BookOpen, Crown, Flame, Infinity as InfinityIcon, Maximize2, Minimize2, Play, Timer, Zap } from 'lucide-react'
+import { Crown, Flame, Infinity as InfinityIcon, Maximize2, Minimize2, Pause, Play, Timer, Zap } from 'lucide-react'
 import { ChessPiece } from '@/components/chess/ChessPiece'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -179,6 +179,7 @@ export default function ChessGame() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [timeControl,  setTimeControl]  = useState<TimeControl>('rapid')
   const [playerTime,   setPlayerTime]   = useState<number | null>(600)
+  const [aiLastMove,   setAiLastMove]   = useState<{ from: string; to: string } | null>(null)
 
   const [, setBoardVer] = useState(0)
   const bumpBoard = () => setBoardVer(v => v + 1)
@@ -287,11 +288,14 @@ export default function ChessGame() {
     aiTimer.current = setTimeout(() => {
       const move = pickMove(chess.current, diff, aiColor)
       if (move) {
-        try { chess.current.move(move) } catch {}
+        try {
+          const result = chess.current.move(move)
+          if (result) setAiLastMove({ from: result.from, to: result.to })
+        } catch {}
         bumpBoard(); persist(diff, pColor); updateCheck(); resolveGameOver(diff, pColor)
       }
       setIsThinking(false)
-    }, diff === 'hard' ? 400 : 300)
+    }, 5000)
   }
 
   // ── Game flow ──────────────────────────────────────────────────────────────
@@ -301,7 +305,7 @@ export default function ChessGame() {
     confettiRef.current?.(); confettiRef.current = null
     chess.current = new Chess()
     setBoardVer(0); setSelectedSq(null); setLegalDests([])
-    setCheckedSq(null); setGameResult(null); setIsThinking(false)
+    setCheckedSq(null); setGameResult(null); setIsThinking(false); setAiLastMove(null)
     setBoardFlipped(pColor === 'b')
     initClock(tc, pColor)
     setStage('playing')
@@ -316,7 +320,7 @@ export default function ChessGame() {
     setDifficulty(saved.difficulty); setPlayerColor(saved.playerColor)
     setBoardFlipped(saved.playerColor === 'b')
     bumpBoard(); setSelectedSq(null); setLegalDests([])
-    setIsThinking(false); setGameResult(null)
+    setIsThinking(false); setGameResult(null); setAiLastMove(null)
     updateCheck()
     const tc = saved.timeControl ?? 'unlimited'
     const pt = saved.playerTime !== undefined ? saved.playerTime : TIME_CFG[tc].seconds
@@ -327,6 +331,21 @@ export default function ChessGame() {
     if (chess.current.turn() === aiColor && !chess.current.isGameOver()) {
       doAIMove(saved.difficulty, saved.playerColor)
     }
+  }
+
+  function handlePause() {
+    if (aiTimer.current) clearTimeout(aiTimer.current)
+    stopClock()
+    setIsThinking(false)
+    persist(difficulty, playerColor)
+    setSavedGame({
+      fen: chess.current.fen(),
+      difficulty,
+      playerColor,
+      timeControl,
+      playerTime: playerTimeRef.current,
+    })
+    setStage('setup')
   }
 
   function handleQuit() {
@@ -342,6 +361,7 @@ export default function ChessGame() {
 
   function handleSquareClick(sq: string) {
     if (stage !== 'playing' || isThinking || chess.current.turn() !== playerColor) return
+    setAiLastMove(null)
     if (selectedSq === sq) { setSelectedSq(null); setLegalDests([]); return }
     if (selectedSq && legalDests.includes(sq)) {
       try {
@@ -386,8 +406,8 @@ export default function ChessGame() {
 
   const inCheck     = chess.current.inCheck()
   const isMyTurn    = chess.current.turn() === playerColor
-  const statusText  = isThinking ? 'AI is thinking…' : isMyTurn ? 'Your Turn' : "AI's Turn"
-  const statusCls   = isThinking ? 'text-amber-400 animate-pulse' : isMyTurn ? 'text-emerald-400' : 'text-amber-400'
+  const statusText  = isMyTurn ? 'Your Turn' : "AI's Turn"
+  const statusCls   = isMyTurn ? 'text-emerald-400' : 'text-amber-400'
 
   function formatTime(t: number | null): string {
     if (t === null) return '∞'
@@ -473,8 +493,9 @@ export default function ChessGame() {
                   const isDest = legalDests.includes(sq)
                   const isCap  = isDest && piece !== null
                   const isOwn  = piece?.color === playerColor
-                  const isFirstCol = col === displayCols[0]
-                  const isLastRow  = row === displayRows[displayRows.length - 1]
+                  const isFirstCol    = col === displayCols[0]
+                  const isLastRow     = row === displayRows[displayRows.length - 1]
+                  const isAiLastMoveSq = aiLastMove !== null && (sq === aiLastMove.from || sq === aiLastMove.to)
 
                   return (
                     <div
@@ -483,7 +504,8 @@ export default function ChessGame() {
                       className={[
                         'relative flex cursor-pointer select-none items-center justify-center',
                         sqBg(row, col, sq),
-                        isCap ? 'ring-2 ring-inset ring-yellow-400/60' : '',
+                        isCap            ? 'ring-2 ring-inset ring-yellow-400/60' : '',
+                        isAiLastMoveSq   ? 'ring-2 ring-yellow-400 ring-inset'    : '',
                       ].join(' ')}
                       style={{ aspectRatio: '1' }}
                     >
@@ -498,6 +520,13 @@ export default function ChessGame() {
                         <span className="pointer-events-none absolute bottom-0.5 right-0.5 z-10 text-[9px] font-bold leading-none text-amber-200/70">
                           {FILES[col]}
                         </span>
+                      )}
+                      {/* AI last move overlay */}
+                      {isAiLastMoveSq && (
+                        <div
+                          className="pointer-events-none absolute inset-0"
+                          style={{ background: 'rgba(255,214,0,0.2)' }}
+                        />
                       )}
                       {/* Legal move dot */}
                       {isDest && !piece && (
@@ -534,7 +563,13 @@ export default function ChessGame() {
 
             {/* Status section */}
             <div className="mt-4 w-full max-w-[560px] rounded-xl bg-slate-600 p-4 dark:bg-slate-700">
-              <p className={`text-center text-lg font-bold ${statusCls}`}>{statusText}</p>
+              {isThinking ? (
+                <p className="text-center text-lg font-bold text-amber-400">
+                  AI is thinking<span className="animate-pulse">...</span>
+                </p>
+              ) : (
+                <p className={`text-center text-lg font-bold ${statusCls}`}>{statusText}</p>
+              )}
               {inCheck && !isThinking && (
                 <p className="mt-1 text-center text-sm font-bold text-rose-400">⚠️ You are in Check!</p>
               )}
@@ -557,13 +592,22 @@ export default function ChessGame() {
               </div>}
             </div>
 
-            {/* Quit button */}
-            <button
-              onClick={handleQuit}
-              className="mt-4 block rounded-xl bg-zinc-600 px-8 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
-            >
-              Quit Game
-            </button>
+            {/* Pause + Quit buttons */}
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handlePause}
+                className="flex items-center gap-2 rounded-xl bg-zinc-600 px-6 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
+              >
+                <Pause className="h-4 w-4" />
+                Pause
+              </button>
+              <button
+                onClick={handleQuit}
+                className="rounded-xl bg-zinc-600 px-6 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
+              >
+                Quit Game
+              </button>
+            </div>
           </div>
         )}
 
@@ -603,8 +647,6 @@ function SetupScreen({
   onStart:       () => void
   onResume:      () => void
 }) {
-  const [showGuide, setShowGuide] = useState(false)
-
   return (
     <div className="mx-auto max-w-md">
       <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
@@ -698,78 +740,6 @@ function SetupScreen({
         </button>
       )}
 
-      {/* How to Play */}
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => setShowGuide(g => !g)}
-          className="inline-flex cursor-pointer items-center gap-1 py-1 text-xs text-zinc-400 underline decoration-zinc-600 transition-colors hover:text-zinc-300 hover:decoration-zinc-300"
-        >
-          <BookOpen className="h-3 w-3" />
-          <span>How to Play</span>
-        </button>
-        {showGuide && (
-          <div className="mt-2 space-y-5 rounded-xl border border-zinc-600 bg-zinc-800/60 p-4 text-left text-sm">
-            {/* The Basics */}
-            <div>
-              <h3 className="mb-3 font-semibold text-white">The Basics</h3>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                {([
-                  { code: 'wK', name: 'King',   desc: '1 square, any direction' },
-                  { code: 'wQ', name: 'Queen',  desc: 'Any direction, any distance' },
-                  { code: 'wR', name: 'Rook',   desc: 'Horizontal or vertical' },
-                  { code: 'wB', name: 'Bishop', desc: 'Diagonals only' },
-                  { code: 'wN', name: 'Knight', desc: 'L-shape (2+1 squares)' },
-                  { code: 'wP', name: 'Pawn',   desc: 'Forward 1 (or 2 from start)' },
-                ] as { code: string; name: string; desc: string }[]).map(({ code, name, desc }) => (
-                  <div key={code} className="flex items-center gap-2">
-                    <div className="shrink-0" style={{ width: 24, height: 24 }}>
-                      <ChessPiece piece={code} size={24} />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-medium text-white">{name} </span>
-                      <span className="text-xs text-zinc-400">{desc}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Beginner Guide */}
-            <div>
-              <h3 className="mb-2 font-semibold text-white">Beginner Guide</h3>
-              <ol className="list-inside list-decimal space-y-1 text-zinc-300">
-                <li>Control the center — push pawns to e4 / d4 early</li>
-                <li>Develop knights and bishops before your queen</li>
-                <li>Castle early to keep your king safe</li>
-                <li>Connect your rooks on the back rank</li>
-                <li>Keep pieces active and coordinated</li>
-                <li>Always ask: what is my opponent threatening?</li>
-              </ol>
-            </div>
-
-            {/* Advanced Tips */}
-            <div>
-              <h3 className="mb-2 font-semibold text-white">Advanced Tips</h3>
-              <ul className="list-inside list-disc space-y-1 text-zinc-300">
-                <li>Look 2–3 moves ahead before committing</li>
-                <li>Avoid moving the same piece twice in the opening</li>
-                <li>Trade pieces when you are ahead in material</li>
-                <li>In the endgame, activate your king — it becomes a fighter</li>
-              </ul>
-            </div>
-
-            {/* Special Moves */}
-            <div>
-              <h3 className="mb-2 font-semibold text-white">Special Moves</h3>
-              <ul className="space-y-1.5 text-zinc-300">
-                <li><span className="font-medium text-violet-300">Castling</span> — King moves 2 squares toward a rook; the rook jumps over</li>
-                <li><span className="font-medium text-violet-300">En Passant</span> — A pawn can capture an adjacent pawn that just moved 2 squares</li>
-                <li><span className="font-medium text-violet-300">Promotion</span> — A pawn reaching the last rank promotes to a queen (or any piece)</li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

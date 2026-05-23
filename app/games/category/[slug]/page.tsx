@@ -1,12 +1,19 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import {
+  Zap, Grid3x3, Brain, Type, Calculator,
+  BookOpen, Trophy, Sparkles,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 import { CATEGORIES } from '@/data/categories'
 import { getGamesByCategory } from '@/lib/gameUtils'
 import CategoryContent from '@/components/CategoryContent'
 import AdBanner from '@/components/AdBanner'
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Zap, Grid3x3, Brain, Type, Calculator, BookOpen, Trophy, Sparkles,
+}
 
 const SITE_NAME = 'Antbreak'
 const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://antbreak.com'
@@ -51,47 +58,23 @@ export default async function CategoryPage({
   if (!category) notFound()
 
   const games = getGamesByCategory(slug)
+  const Icon  = ICON_MAP[category.icon]
+
+  const iconNode = Icon ? (
+    <div className={`rounded-lg p-2 ${category.color}`}>
+      <Icon className={`h-5 w-5 ${category.textColor}`} />
+    </div>
+  ) : null
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="mb-4">
-        <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
-          <li>
-            <Link href="/" className="transition-colors hover:text-zinc-800 dark:hover:text-zinc-200">
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
-          <li>
-            <Link href="/games" className="transition-colors hover:text-zinc-800 dark:hover:text-zinc-200">
-              Games
-            </Link>
-          </li>
-          <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
-          <li className="font-medium text-zinc-900 dark:text-zinc-100">
-            {category.name}
-          </li>
-        </ol>
-      </nav>
-
-      {/* Category header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-          {category.name}
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          {category.description}
-        </p>
-      </div>
 
       {/* Leaderboard ad — below category header, above game grid */}
       {/* AdSense Leaderboard — insert ad unit here */}
       <AdBanner size="leaderboard" className="mb-8" />
 
-      {/* Sort dropdown + game grid (client-side sort) */}
-      <CategoryContent games={games} category={category} />
+      {/* Banner + sort + game grid (client-side sort) */}
+      <CategoryContent games={games} category={category} icon={iconNode} />
 
     </div>
   )
