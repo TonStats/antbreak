@@ -136,16 +136,11 @@ export default async function GamePage({
           </ol>
         </nav>
 
-        {/* ── Game embed — fills remaining viewport ─────────────── */}
-        <GameEmbed game={game} />
+        {/* ── Game + sidebar ────────────────────────────────────── */}
+        <GameEmbed game={game} category={category} />
 
         {/* ── Below-fold content — user scrolls to reach ────────── */}
         <div className="mt-8 space-y-10 pb-10">
-
-            {/* Page title */}
-            <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-              {game.name}
-            </h1>
 
             {/* How to Play */}
             {game.howToPlay.length > 0 && (
