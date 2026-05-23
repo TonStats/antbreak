@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 
 export default function TypingSpeedTestPage() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-      <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <nav aria-label="Breadcrumb" className="py-1 flex items-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">
         <Link href="/" className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Home</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <Link href="/games/category/original-games" className="transition-colors hover:text-zinc-900 dark:hover:text-zinc-100">Original Games</Link>
@@ -25,7 +25,9 @@ export default function TypingSpeedTestPage() {
         <span className="text-zinc-900 dark:text-zinc-100">Typing Speed Test</span>
       </nav>
 
-      <TypingGame />
+      <div className="game-frame">
+        <TypingGame />
+      </div>
 
       <div className="mt-6 space-y-6 pb-12">
         <OriginalGameActions slug="typing-speed-test" />

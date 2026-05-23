@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
   const { slug, rating, gameTitle } = body
 
-  if (!slug || typeof rating !== 'number' || rating < 1 || rating > 5) {
+  if (!slug || typeof rating !== 'number' || rating < 0 || rating > 5) {
     return NextResponse.json({ error: 'invalid payload' }, { status: 400 })
   }
 
@@ -61,12 +61,27 @@ export async function POST(request: Request) {
 
   const userAgent = request.headers.get('user-agent') ?? ''
 
-  await supabase.from('game_ratings').insert({
-    slug,
-    game_title: gameTitle ?? null,
-    rating,
-    user_agent: userAgent,
-  })
+  if (rating === 0) {
+    // Deselect — remove the most recent row for this slug and user-agent
+    const { data } = await supabase
+      .from('game_ratings')
+      .select('id')
+      .eq('slug', slug)
+      .eq('user_agent', userAgent)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (data && data.length > 0) {
+      await supabase.from('game_ratings').delete().eq('id', data[0].id)
+    }
+  } else {
+    await supabase.from('game_ratings').insert({
+      slug,
+      game_title: gameTitle ?? null,
+      rating,
+      user_agent: userAgent,
+    })
+  }
 
   return NextResponse.json({ ok: true })
 }

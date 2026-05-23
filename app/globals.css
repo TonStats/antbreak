@@ -50,3 +50,33 @@
     display: none;
   }
 }
+
+/* Game frame — height-first, fits viewport without scrolling */
+.game-frame {
+  height: calc(100vh - 152px);
+  min-height: 400px;
+  max-height: 620px;
+  width: auto;
+  aspect-ratio: var(--game-ratio, 16 / 9);
+  max-width: 100%;
+  margin: 0 auto;
+}
+@media (max-width: 767px) {
+  .game-frame {
+    height: 55vw;
+    min-height: 280px;
+    max-height: 400px;
+    width: 100%;
+    aspect-ratio: unset;
+  }
+}
+
+/* Sidebar matches game frame height on lg+ screens */
+@media (min-width: 1024px) {
+  .game-sidebar {
+    height: calc(100vh - 152px);
+    min-height: 400px;
+    max-height: 620px;
+    overflow-y: auto;
+  }
+}

@@ -105,7 +105,7 @@ export default async function GamePage({
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* ── Breadcrumb — 32px row ──────────────────────────────── */}
-        <nav aria-label="Breadcrumb" className="py-2">
+        <nav aria-label="Breadcrumb" className="py-1">
           <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-zinc-500 dark:text-zinc-400">
             <li>
               <Link href="/" className="transition-colors hover:text-zinc-800 dark:hover:text-zinc-200">

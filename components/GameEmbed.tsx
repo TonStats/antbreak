@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Play, Maximize2, Loader2, Heart, Share2, Star } from 'lucide-react'
@@ -74,21 +74,24 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
     } catch { /* */ }
   }
 
-  async function handleRate(stars: number) {
-    setUserRating(stars)
-    localStorage.setItem(`rating_${game.slug}`, String(stars))
+  async function handleRate(star: number) {
+    const next = userRating === star ? 0 : star
+    setUserRating(next)
+    if (next === 0) {
+      localStorage.removeItem(`rating_${game.slug}`)
+    } else {
+      localStorage.setItem(`rating_${game.slug}`, String(next))
+    }
     try {
       await fetch('/api/rate-game', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: game.slug, rating: stars, gameTitle: game.name }),
+        body: JSON.stringify({ slug: game.slug, rating: next, gameTitle: game.name }),
       })
       const r = await fetch(`/api/rate-game?slug=${encodeURIComponent(game.slug)}`)
       const data: { average: number; count: number } = await r.json()
-      if (data.count > 0) {
-        setAvgRating(data.average)
-        setAvgCount(data.count)
-      }
+      setAvgRating(data.count > 0 ? data.average : 0)
+      setAvgCount(data.count)
     } catch {}
   }
 
@@ -100,12 +103,8 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
         {/* ── Left: game frame ─────────────────────────────────────────────── */}
         <div className="min-w-0 flex-1">
           <div
-            className="relative mx-auto w-full overflow-hidden rounded-2xl bg-zinc-900"
-            style={{
-              aspectRatio: `${width} / ${height}`,
-              maxHeight: '720px',
-              minHeight: '360px',
-            }}
+            className="game-frame relative overflow-hidden rounded-2xl bg-zinc-900"
+            style={{ '--game-ratio': `${width} / ${height}` } as React.CSSProperties}
           >
             {!playing ? (
               <>
@@ -163,7 +162,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
         </div>
 
         {/* ── Right: sidebar ───────────────────────────────────────────────── */}
-        <aside className="w-full shrink-0 lg:w-[280px]">
+        <aside className="game-sidebar w-full shrink-0 lg:w-[280px]">
 
           {/* Game name */}
           <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
@@ -225,7 +224,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
           {/* Star rating */}
           <div className="space-y-2">
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {userRating > 0 ? `Your rating: ${userRating}/5` : 'Rate this game'}
+              Rate this game
             </p>
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((star) => {
@@ -251,6 +250,11 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
                 )
               })}
             </div>
+            {userRating > 0 ? (
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Your rating: {userRating}/5 — click same star to remove
+              </p>
+            ) : null}
             {avgCount > 0 && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {avgRating.toFixed(1)} ★ ({avgCount} {avgCount === 1 ? 'rating' : 'ratings'})
