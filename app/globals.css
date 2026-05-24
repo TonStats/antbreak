@@ -36,6 +36,15 @@
   --sudoku-box-border:  #9ca3af;
 }
 
+/* Question fade-in for Geography Challenge */
+@keyframes geo-question-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.geo-question-enter {
+  animation: geo-question-in 200ms ease-out;
+}
+
 /* Shake animation for wrong Sudoku cell entries */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }

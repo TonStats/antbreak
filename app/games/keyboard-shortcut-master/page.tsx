@@ -1,21 +1,22 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import ChessGame from './ChessGame'
+import KeyboardGame from './KeyboardGame'
 import OriginalGameSidebar from '@/components/OriginalGameSidebar'
 import { GAMES } from '@/data/games'
 import { CATEGORIES } from '@/data/categories'
 
-const game     = GAMES.find(g => g.id === 'chess')!
+const game     = GAMES.find(g => g.id === 'keyboard-shortcut-master')!
 const category = CATEGORIES.find(c => c.id === game.category)
 
 export const metadata: Metadata = {
-  title: 'Chess — Play Free Online Chess vs AI | Antbreak',
+  title: 'Keyboard Shortcut Master — Free Shortcut Trainer | Antbreak',
   description:
-    'Play free online chess against an AI opponent. Choose Easy, Medium or Hard difficulty. No download, no signup required.',
+    'Master keyboard shortcuts for Windows, Mac, Google Docs, VS Code, Excel and Photoshop. ' +
+    'Three game modes: Shortcut Sprint, Reverse Challenge, and Software Gauntlet.',
 }
 
-export default function ChessPage() {
+export default function KeyboardShortcutMasterPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
@@ -32,7 +33,7 @@ export default function ChessPage() {
             </Link>
           </li>
           <li aria-hidden="true"><ChevronRight className="h-3.5 w-3.5" /></li>
-          <li className="font-medium text-zinc-900 dark:text-zinc-100">Chess</li>
+          <li className="font-medium text-zinc-900 dark:text-zinc-100">Keyboard Shortcut Master</li>
         </ol>
       </nav>
 
@@ -41,8 +42,8 @@ export default function ChessPage() {
 
         {/* Left: game */}
         <div className="min-w-0 flex-1">
-          <div style={{ height: 'calc(100vh - 100px)', minHeight: '500px', overflowY: 'auto' }}>
-            <ChessGame />
+          <div style={{ height: 'calc(100vh - 100px)', minHeight: '500px' }}>
+            <KeyboardGame />
           </div>
         </div>
 
@@ -55,7 +56,7 @@ export default function ChessPage() {
       <div className="mt-8 space-y-10 pb-10">
 
         {game.howToPlay.length > 0 && (
-          <section>
+          <section id="how-to-play">
             <h2 className="mb-4 text-xl font-bold text-zinc-900 dark:text-zinc-100">How to Play</h2>
             <ol className="space-y-3">
               {game.howToPlay.map((step, i) => (
@@ -85,7 +86,7 @@ export default function ChessPage() {
         )}
 
         <section>
-          <h2 className="mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-100">About Chess</h2>
+          <h2 className="mb-3 text-xl font-bold text-zinc-900 dark:text-zinc-100">About Keyboard Shortcut Master</h2>
           <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{game.description}</p>
         </section>
 

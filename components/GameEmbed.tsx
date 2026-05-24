@@ -18,7 +18,6 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
   const [loading, setLoading]     = useState(false)
   const [imgFailed, setImgFailed] = useState(false)
   const [copied, setCopied]       = useState(false)
-  const [showMore, setShowMore]   = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
   const [userRating, setUserRating]   = useState(0)
   const [avgRating, setAvgRating]     = useState(0)
@@ -257,25 +256,6 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
             )}
           </div>
 
-          <hr className="my-4 border-zinc-200 dark:border-zinc-700" />
-
-          {/* Short description with Read more toggle */}
-          {game.description && (
-            <div>
-              <p className={`text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 ${showMore ? '' : 'line-clamp-3'}`}>
-                {game.description}
-              </p>
-              {game.description.length > 120 && (
-                <button
-                  type="button"
-                  onClick={() => setShowMore((v) => !v)}
-                  className="mt-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-                >
-                  {showMore ? 'Show less ↑' : 'Read more ↓'}
-                </button>
-              )}
-            </div>
-          )}
         </aside>
       </div>
     </>

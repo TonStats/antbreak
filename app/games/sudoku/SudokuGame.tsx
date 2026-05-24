@@ -183,23 +183,23 @@ function SetupScreen({
 }: SetupProps) {
   return (
     <div>
-      <div className="mb-6 flex items-center justify-center gap-3">
-        <Grid3x3 className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-        <h1 className="text-3xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
+      <div className="mb-3 flex items-center justify-center gap-2">
+        <Grid3x3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        <h1 className="text-2xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
       </div>
-      <div className="mb-6 border-b border-amber-200 dark:border-zinc-600" />
+      <div className="mb-3 border-b border-amber-200 dark:border-zinc-600" />
 
       {mode === 'daily' && dailyCompleted && (
-        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-center dark:border-amber-500/30 dark:bg-amber-500/10">
-          <p className="font-semibold text-amber-600 dark:text-amber-400">Already completed today!</p>
-          <p className="mt-1 text-sm text-stone-500 dark:text-zinc-400">Come back tomorrow for a new puzzle.</p>
+        <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50/80 p-2 text-center dark:border-amber-500/30 dark:bg-amber-500/10">
+          <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Already completed today!</p>
+          <p className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400">Come back tomorrow for a new puzzle.</p>
           <CountdownToMidnight />
         </div>
       )}
 
       {/* Difficulty */}
-      <div className="mb-8">
-        <p className="mb-3 block text-center text-sm font-semibold uppercase tracking-widest text-stone-600 dark:text-zinc-300">
+      <div className="mb-4">
+        <p className="mb-2 block text-center text-xs font-semibold uppercase tracking-widest text-stone-600 dark:text-zinc-300">
           Choose Difficulty
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -208,7 +208,7 @@ function SetupScreen({
               key={d}
               onClick={() => onDifficulty(d)}
               className={[
-                'rounded-xl border px-3 py-3 text-sm font-semibold transition-all',
+                'rounded-xl border px-4 py-2 text-sm font-semibold transition-all',
                 difficulty === d
                   ? DIFF_CFG[d].sel
                   : 'border-stone-200 bg-white text-stone-500 shadow-sm hover:bg-amber-50 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600',
@@ -221,15 +221,15 @@ function SetupScreen({
       </div>
 
       {/* Mode */}
-      <div className="mb-4">
-        <p className="mb-3 block text-center text-sm font-semibold uppercase tracking-widest text-stone-600 dark:text-zinc-300">
+      <div className="mb-3">
+        <p className="mb-2 block text-center text-xs font-semibold uppercase tracking-widest text-stone-600 dark:text-zinc-300">
           Choose Mode
         </p>
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onMode('classic')}
             className={[
-              'flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-all',
+              'flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all',
               mode === 'classic'
                 ? 'border-violet-500 bg-violet-600 text-white shadow-lg shadow-violet-600/25'
                 : 'border-stone-200 bg-white text-stone-500 shadow-sm hover:bg-amber-50 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600',
@@ -241,7 +241,7 @@ function SetupScreen({
           <button
             onClick={() => onMode('daily')}
             className={[
-              'flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-all',
+              'flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all',
               mode === 'daily'
                 ? 'border-amber-400 bg-amber-500 text-white shadow-lg shadow-amber-500/25'
                 : 'border-stone-200 bg-white text-stone-500 shadow-sm hover:bg-amber-50 dark:border-zinc-500 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600',
@@ -254,24 +254,24 @@ function SetupScreen({
       </div>
 
       {streak > 0 && (
-        <div className="mb-2 text-center">
-          <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">🔥 {streak} day streak</span>
+        <div className="mt-1 mb-2 text-center">
+          <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">🔥 {streak} day streak</span>
         </div>
       )}
 
       <button
         onClick={onStart}
         disabled={mode === 'daily' && dailyCompleted}
-        className="mt-8 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-4 text-lg font-bold text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-base font-bold text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Play className="mr-2 inline h-5 w-5" />
+        <Play className="mr-2 inline h-4 w-4" />
         Start Puzzle
       </button>
 
       {savedClassicGame && (
         <button
           onClick={onResumeClassic}
-          className="mt-3 w-full rounded-xl bg-amber-500 py-3 font-semibold text-white shadow-sm transition-all hover:bg-amber-400"
+          className="mt-2 w-full rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-400"
         >
           Resume Classic — {DIFF_CFG[savedClassicGame.difficulty].label} · {formatTime(savedClassicGame.timer)} elapsed
         </button>
@@ -280,7 +280,7 @@ function SetupScreen({
       {savedDailyGame && (
         <button
           onClick={onResumeDaily}
-          className="mt-3 w-full rounded-xl bg-sky-500 py-3 font-semibold text-white shadow-sm transition-all hover:bg-sky-400"
+          className="mt-2 w-full rounded-xl bg-sky-500 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-sky-400"
         >
           Resume Today&apos;s Puzzle — Daily · {formatTime(savedDailyGame.timer)} elapsed
         </button>
@@ -690,13 +690,13 @@ export default function SudokuGame() {
 
   const cardClass = isFullscreen
     ? 'fixed inset-0 z-50 overflow-auto bg-amber-50 p-6 dark:bg-zinc-800'
-    : 'relative mx-auto max-w-2xl rounded-2xl border-2 border-amber-200 bg-amber-50/90 p-6 backdrop-blur-sm dark:border-zinc-600 dark:bg-zinc-800/90'
+    : 'relative w-full rounded-2xl border-2 border-amber-200 bg-amber-50/90 p-4 backdrop-blur-sm dark:border-zinc-600 dark:bg-zinc-800/90'
 
-  const ctrlBtn = 'flex flex-1 flex-col items-center gap-1 rounded-xl border border-gray-300 bg-white py-2 text-xs font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
+  const ctrlBtn = 'flex flex-1 flex-col items-center gap-1 rounded-xl border border-gray-300 bg-white py-2 px-3 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
 
   return (
-    <div className="min-h-screen bg-background px-4 py-8">
-      <div className={cardClass} style={isFullscreen ? undefined : cardStyle}>
+    <div className="bg-background px-4 py-3">
+      <div id="original-game-card" className={cardClass} style={isFullscreen ? undefined : cardStyle}>
 
         {/* Fullscreen toggle */}
         {stage !== 'setup' && (
@@ -725,29 +725,29 @@ export default function SudokuGame() {
         {/* ── Playing ── */}
         {(stage === 'playing' || stage === 'complete') && puzzle.length > 0 && (
           <div>
-            <div className="mb-4 flex items-center justify-center gap-2 pr-8">
-              <Grid3x3 className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+            <div className="mb-2 flex items-center justify-center gap-2 pr-8">
+              <Grid3x3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               <h1 className="text-2xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
             </div>
-            <div className="mb-4 border-b border-amber-200 dark:border-zinc-600" />
+            <div className="mb-3 border-b border-amber-200 dark:border-zinc-600" />
 
             {/* Status bar */}
-            <div className="mb-3 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="mb-2 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center gap-2">
-                <span className="font-mono font-semibold text-stone-700 dark:text-zinc-200">{formatTime(elapsed)}</span>
+                <span className="font-mono text-xs font-semibold text-stone-700 dark:text-zinc-200">{formatTime(elapsed)}</span>
                 <button
                   onClick={pauseAndGoToSetup}
                   className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
                   aria-label="Pause"
                 >
-                  <Pause className="h-3.5 w-3.5" />
+                  <Pause className="h-3 w-3" />
                   Pause
                 </button>
               </div>
-              <span className={`${DIFF_CFG[difficulty].badge} rounded-full px-3 py-0.5 text-xs font-semibold text-white`}>
+              <span className={`${DIFF_CFG[difficulty].badge} rounded-full px-2 py-0.5 text-xs font-semibold text-white`}>
                 {DIFF_CFG[difficulty].label}
               </span>
-              <span className={`text-sm font-medium ${mistakes > 0 ? 'text-rose-500 dark:text-rose-400' : 'text-stone-400 dark:text-zinc-400'}`}>
+              <span className={`text-xs font-medium ${mistakes > 0 ? 'text-rose-500 dark:text-rose-400' : 'text-stone-400 dark:text-zinc-400'}`}>
                 {mistakes}/3 mistakes
               </span>
             </div>
@@ -774,7 +774,7 @@ export default function SudokuGame() {
             )}
 
             {/* Board */}
-            <div className="mx-auto w-full max-w-[450px]">
+            <div className="mx-auto w-full max-w-[400px]">
               <div className="grid grid-cols-9 overflow-hidden rounded-lg border-2 border-gray-800 bg-white dark:border-zinc-600 dark:bg-zinc-900">
                 {Array.from({ length: 9 }, (_, r) =>
                   Array.from({ length: 9 }, (_, c) => {
@@ -813,7 +813,7 @@ export default function SudokuGame() {
                             ))}
                           </div>
                         ) : val !== 0 ? (
-                          <span className={`text-xl leading-none ${text}`}>{val}</span>
+                          <span className={`text-lg leading-none ${text}`}>{val}</span>
                         ) : null}
                       </div>
                     )
@@ -823,14 +823,14 @@ export default function SudokuGame() {
             </div>
 
             {/* Number pad */}
-            <div className="mx-auto mt-4 w-full max-w-[450px]">
-              <div className="grid grid-cols-9 gap-1">
+            <div className="mx-auto mt-2 w-full max-w-[400px]">
+              <div className="grid grid-cols-9 gap-1.5">
                 {[1,2,3,4,5,6,7,8,9].map(n => (
                   <button
                     key={n}
                     onClick={() => handleDigitInput(n)}
                     disabled={stage !== 'playing'}
-                    className="flex aspect-square items-center justify-center rounded-xl border-2 border-gray-300 bg-white text-lg font-bold text-gray-800 transition-colors hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-gray-300 bg-white text-base font-bold text-gray-800 transition-colors hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
                   >
                     {n}
                   </button>
@@ -839,12 +839,12 @@ export default function SudokuGame() {
             </div>
 
             {/* Control buttons */}
-            <div className="mx-auto mt-3 flex w-full max-w-[450px] justify-between gap-2">
+            <div className="mx-auto mt-2 flex w-full max-w-[400px] justify-between gap-1.5">
               <button
                 onClick={() => setNotesMode(m => !m)}
                 disabled={stage !== 'playing'}
                 className={[
-                  'flex flex-1 flex-col items-center gap-1 rounded-xl border py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-40',
+                  'flex flex-1 flex-col items-center gap-1 rounded-xl border py-2 px-3 text-sm font-semibold shadow-sm transition-all disabled:opacity-40',
                   notesMode
                     ? 'border-blue-600 bg-blue-500 text-white dark:border-blue-500 dark:bg-blue-600'
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700',
@@ -867,7 +867,7 @@ export default function SudokuGame() {
                   stage !== 'playing' || hintsLeft <= 0 || !selectedCell ||
                   (selectedCell ? puzzle[selectedCell[0]]?.[selectedCell[1]] !== 0 : false)
                 }
-                className="flex flex-1 flex-col items-center gap-1 rounded-xl border border-amber-600 bg-amber-500 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-amber-400 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-300 dark:border-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500 dark:disabled:border-zinc-700 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600"
+                className="flex flex-1 flex-col items-center gap-1 rounded-xl border border-amber-600 bg-amber-500 py-2 px-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-400 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-300 dark:border-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500 dark:disabled:border-zinc-700 dark:disabled:bg-zinc-800 dark:disabled:text-zinc-600"
               >
                 <Lightbulb className="h-4 w-4" />
                 Hint ({hintsLeft})
@@ -876,7 +876,7 @@ export default function SudokuGame() {
 
             {/* Back to menu */}
             {stage === 'playing' && (
-              <div className="mt-4 text-center">
+              <div className="mt-2 text-center">
                 <button
                   onClick={pauseAndGoToSetup}
                   className="text-xs text-stone-400 underline hover:text-stone-600 dark:text-zinc-500 dark:hover:text-zinc-300"
@@ -892,16 +892,16 @@ export default function SudokuGame() {
         {stage === 'complete' && gameResult && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
             <div
-              className="w-full max-w-sm rounded-2xl border-2 border-amber-300 bg-amber-50 p-8 text-center shadow-2xl dark:border-zinc-600 dark:bg-zinc-800"
+              className="w-full max-w-sm rounded-2xl border-2 border-amber-300 bg-amber-50 p-5 text-center shadow-2xl dark:border-zinc-600 dark:bg-zinc-800"
               style={{ boxShadow: '0 0 0 1px rgba(251,191,36,0.3), 0 25px 60px rgba(0,0,0,0.4)' }}
             >
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20">
-                <span className="text-5xl text-emerald-500">✓</span>
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20">
+                <span className="text-3xl text-emerald-500">✓</span>
               </div>
-              <h2 className="mb-1 text-3xl font-bold text-stone-800 dark:text-white">Puzzle Complete!</h2>
-              <p className="mb-5 text-stone-600 dark:text-zinc-300">Completed in {formatTime(gameResult.time)}</p>
+              <h2 className="mb-1 text-2xl font-bold text-stone-800 dark:text-white">Puzzle Complete!</h2>
+              <p className="mb-3 text-sm text-stone-600 dark:text-zinc-300">Completed in {formatTime(gameResult.time)}</p>
 
-              <div className="mb-5 space-y-2 rounded-xl border border-amber-200 bg-white/80 p-4 text-sm dark:border-zinc-600 dark:bg-zinc-700/60">
+              <div className="mb-3 space-y-1 rounded-xl border border-amber-200 bg-white/80 p-3 text-xs dark:border-zinc-600 dark:bg-zinc-700/60">
                 <div className="flex justify-between">
                   <span className="text-stone-500 dark:text-zinc-400">Difficulty</span>
                   <span className={`${DIFF_CFG[gameResult.difficulty].badge} rounded-full px-2 py-0.5 text-xs font-semibold text-white`}>
@@ -932,9 +932,9 @@ export default function SudokuGame() {
               </div>
 
               {gameResult.mode === 'daily' && gameResult.streak > 0 && (
-                <div className="mb-5 rounded-xl border border-amber-300 bg-amber-100/80 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-                  <p className="font-semibold text-amber-600 dark:text-amber-400">🔥 {gameResult.streak} day streak!</p>
-                  <p className="mt-1 text-xs text-stone-500 dark:text-zinc-400">Come back tomorrow for a new puzzle.</p>
+                <div className="mb-3 rounded-xl border border-amber-300 bg-amber-100/80 p-2 dark:border-amber-500/30 dark:bg-amber-500/10">
+                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">🔥 {gameResult.streak} day streak!</p>
+                  <p className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400">Come back tomorrow for a new puzzle.</p>
                   <CountdownToMidnight />
                 </div>
               )}
@@ -946,7 +946,7 @@ export default function SudokuGame() {
                     if (gameResult.mode === 'classic') localStorage.removeItem('sudoku_saved_classic')
                     setStage('setup')
                   }}
-                  className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 font-bold text-white shadow-md shadow-amber-500/30 hover:from-amber-400 hover:to-orange-400"
+                  className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-2 text-sm font-bold text-white shadow-md shadow-amber-500/30 hover:from-amber-400 hover:to-orange-400"
                 >
                   New Puzzle
                 </button>
@@ -956,7 +956,7 @@ export default function SudokuGame() {
                     if (gameResult.mode === 'classic') localStorage.removeItem('sudoku_saved_classic')
                     startGame()
                   }}
-                  className="w-full rounded-xl border border-stone-200 bg-stone-100 py-3 font-semibold text-stone-700 hover:bg-stone-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+                  className="w-full rounded-xl border border-stone-200 bg-stone-100 py-2 text-sm font-semibold text-stone-700 hover:bg-stone-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
                 >
                   Play Again (Same Settings)
                 </button>

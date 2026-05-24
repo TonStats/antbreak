@@ -426,10 +426,11 @@ export default function ChessGame() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-background px-3 py-6 sm:px-6 sm:py-10">
+    <div className="bg-background px-3 py-3 sm:px-6 sm:py-4">
       <div
         ref={containerRef}
-        className="relative mx-auto w-full max-w-3xl rounded-2xl bg-slate-700 p-5 dark:bg-slate-800 sm:p-8"
+        id="original-game-card"
+        className="relative w-full rounded-2xl bg-slate-700 p-4 dark:bg-slate-800"
         style={{ boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 25px 50px rgba(0,0,0,0.4)' }}
       >
         {/* Fullscreen */}
@@ -442,9 +443,9 @@ export default function ChessGame() {
         </button>
 
         {/* Title */}
-        <div className="mb-8 flex items-center justify-center gap-2.5 border-b border-slate-500 pb-6">
-          <Crown className="h-6 w-6 text-violet-400" />
-          <h1 className="text-3xl font-bold text-white">Chess</h1>
+        <div className="mb-4 flex items-center justify-center gap-2 border-b border-slate-500 pb-3">
+          <Crown className="h-5 w-5 text-violet-400" />
+          <h1 className="text-2xl font-bold text-white">Chess</h1>
         </div>
 
         {/* ── SETUP ─────────────────────────────────────────────────────── */}
@@ -479,7 +480,7 @@ export default function ChessGame() {
             <div
               className="grid grid-cols-8"
               style={{
-                width: 'min(560px, min(94vw, 62vh))',
+                width: 'min(520px, min(90vw, calc(100vh - 320px)))',
                 aspectRatio: '1',
                 backgroundImage: 'url(/chess/boards/wood4.jpg)',
                 backgroundSize: 'cover',
