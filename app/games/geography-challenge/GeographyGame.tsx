@@ -749,13 +749,26 @@ function SetupScreen({
 // ── Timer Bar ─────────────────────────────────────────────────────────────────
 
 function TimerBar({ timeLeft, maxTime }: { timeLeft: number; maxTime: number }) {
-  const pct   = maxTime > 0 ? (timeLeft / maxTime) * 100 : 0
-  const color = pct > 50 ? 'bg-teal-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500'
+  const [animated, setAnimated] = useState(false)
+
+  // On mount (each new question via key={currentIdx}): snap to full, then
+  // enable smooth drain after 50 ms so the reset is instant.
+  useEffect(() => {
+    const t = setTimeout(() => setAnimated(true), 50)
+    return () => clearTimeout(t)
+  }, [])
+
+  const pct      = maxTime > 0 ? (timeLeft / maxTime) * 100 : 0
+  const barColor = timeLeft > 6 ? 'bg-green-500' : timeLeft > 3 ? 'bg-yellow-500' : 'bg-rose-500'
+
   return (
-    <div className="mb-4 h-0.5 w-full overflow-hidden rounded-full bg-slate-700">
+    <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
       <div
-        className={`h-full rounded-full transition-all duration-1000 ease-linear ${color}`}
-        style={{ width: `${pct}%` }}
+        className={`h-full rounded-full ${barColor}`}
+        style={{
+          width: `${pct}%`,
+          transition: animated ? 'width 1s linear' : 'none',
+        }}
       />
     </div>
   )
@@ -809,8 +822,8 @@ function PlayingScreen({
         />
       </div>
 
-      {/* Timer bar */}
-      <TimerBar timeLeft={timeLeft} maxTime={maxTime} />
+      {/* Timer bar — key forces remount on each question so the bar snaps to full */}
+      <TimerBar key={currentIdx} timeLeft={timeLeft} maxTime={maxTime} />
 
       {/* Question content — fade-in on each new question */}
       <div key={currentIdx} className="geo-question-enter">
