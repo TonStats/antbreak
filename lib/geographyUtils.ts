@@ -65,8 +65,8 @@ function buildQuestion(
   if (mode === 'map') {
     return {
       country,
-      correctAnswer: country.code,
-      questionText:  `Click on ${country.name}`,
+      correctAnswer: country.continent,
+      questionText:  `Which continent is ${country.name} in?`,
       mode,
     }
   }

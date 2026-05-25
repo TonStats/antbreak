@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Globe, Maximize2, Minimize2, Volume2, VolumeX } from 'lucide-react'
-import { ComposableMap, Geographies, Geography, Sphere, Graticule } from 'react-simple-maps'
 import type { GameMode, Difficulty, QuizQuestion, Country } from '@/types/geography'
 import { COUNTRIES } from '@/data/geography'
 import { generateQuestions, getDailyQuestions, getOptionDisplay } from '@/lib/geographyUtils'
-import { ISO_A2_TO_NUMERIC } from '@/lib/isoNumericCodes'
 
 // ── Local types ───────────────────────────────────────────────────────────────
 
@@ -60,8 +58,6 @@ const DIFF_CFG: Record<Difficulty, DiffConfig> = {
 }
 
 const COUNTS: QuestionCount[] = [5, 10, 15, 20]
-
-const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
 
 const GRADE_CANVAS_COLOR: Record<string, string> = {
   S: '#facc15', A: '#34d399', B: '#38bdf8', C: '#fb923c', D: '#71717a',
@@ -157,16 +153,6 @@ export default function GeographyGame() {
   const fastestFlagRef = useRef(Infinity)
   const popStreakRef   = useRef({ current: 0, best: 0 })
   const audioCtxRef   = useRef<AudioContext | null>(null)
-
-  // Reverse lookup: numeric ISO string → Country
-  const numericToCountry = useMemo(() => {
-    const m = new Map<string, Country>()
-    for (const c of COUNTRIES) {
-      const n = ISO_A2_TO_NUMERIC[c.code]
-      if (n) m.set(String(n), c)
-    }
-    return m
-  }, [])
 
   // ── Load streak/daily on mount ─────────────────────────────────────────────
   useEffect(() => {
@@ -383,37 +369,24 @@ export default function GeographyGame() {
     setAnswered(true)
   }
 
-  function handleMapAnswer(numericId: string) {
+  function handleMapAnswer(continent: string) {
     if (answered) return
-    const q              = questions[currentIdx]
-    const correctNumeric = ISO_A2_TO_NUMERIC[q.country.code] ?? 0
-    const clickedC       = numericToCountry.get(numericId)
-    const isExact        = numericId === String(correctNumeric)
-    const elapsed        = (Date.now() - questionStart.current) / 1000
+    const q       = questions[currentIdx]
+    const correct = continent === q.correctAnswer
+    const elapsed = (Date.now() - questionStart.current) / 1000
+    const pts     = correct ? (elapsed <= 3 ? 150 : 100) : 0
 
-    let pts      = 0
-    let feedback = 'Cold! ❄️'
-
-    if (isExact) {
-      pts      = elapsed <= 5 ? 150 : 100
-      feedback = 'Perfect! 🎯'
+    if (correct) {
       playBeep(440, 150)
-    } else if (clickedC?.region === q.country.region) {
-      pts      = 50
-      feedback = 'Close! 🌡️'
-      playBeep(330, 150)
-    } else if (clickedC?.continent === q.country.continent) {
-      pts      = 25
-      feedback = 'Warm! 🔥'
-      playBeep(280, 150)
+      setMapFeedback('Correct! 🎯')
     } else {
       playBeep(220, 150)
+      setMapFeedback(`It's in ${q.country.continent}!`)
     }
 
     setScore(s => s + pts)
-    if (isExact) setCorrectCount(c => c + 1)
-    setSelected(numericId)
-    setMapFeedback(feedback)
+    if (correct) setCorrectCount(c => c + 1)
+    setSelected(continent)
     setAnswered(true)
   }
 
@@ -770,7 +743,7 @@ interface PlayingProps {
   timeLeft:     number
   maxTime:      number
   onAnswer:     (display: string) => void
-  onMapAnswer:  (numericId: string) => void
+  onMapAnswer:  (continent: string) => void
 }
 
 function PlayingScreen({
@@ -868,9 +841,9 @@ function PlayingScreen({
           </>
         )}
 
-        {/* Map Tap */}
+        {/* Map Tap — continent selection */}
         {qMode === 'map' && (
-          <MapTapScreen
+          <ContinentSelectScreen
             question={question}
             answered={answered}
             selected={selected}
@@ -1000,95 +973,58 @@ function PopulationDuelCards({ options, correctAnswer, selected, answered, onAns
   )
 }
 
-// ── Map Tap Screen ────────────────────────────────────────────────────────────
+// ── Continent Select Screen (replaces Map Tap) ────────────────────────────────
 
-interface MapTapProps {
+const ALL_CONTINENTS = ['Africa', 'Antarctica', 'Asia', 'Europe', 'North America', 'Oceania', 'South America']
+
+interface ContinentProps {
   question: QuizQuestion
   answered: boolean
   selected: string | null
   feedback: string | null
-  onAnswer: (numericId: string) => void
+  onAnswer: (continent: string) => void
 }
 
-function MapTapScreen({ question, answered, selected, feedback, onAnswer }: MapTapProps) {
-  const correctNumeric = String(ISO_A2_TO_NUMERIC[question.country.code] ?? 0)
-
-  function getFill(geoId: number | string): string {
-    const id = String(geoId)
-    if (answered && id === correctNumeric) return '#10b981'
-    if (answered && selected && id === selected && id !== correctNumeric) return '#ef4444'
-    return '#1e3a5f'
-  }
-
-  function getHoverFill(geoId: number | string): string {
-    if (answered) return getFill(geoId)
-    return '#0d9488'
-  }
-
+function ContinentSelectScreen({ question, answered, selected, feedback, onAnswer }: ContinentProps) {
   return (
     <div>
-      <p className="mb-1 text-center text-2xl font-bold text-white">{question.questionText}</p>
-      <p className="mb-3 text-center text-sm text-teal-400">
-        Hint: it&apos;s in {question.country.continent}
-      </p>
-
-      {/* Taller on mobile (3/2), wider on desktop (2/1) */}
-      <div className="relative w-full overflow-hidden rounded-xl bg-slate-900 aspect-[3/2] sm:aspect-[2/1]">
-        <ComposableMap
-          projection="geoNaturalEarth1"
-          projectionConfig={{ scale: 160 }}
-          width={800}
-          height={400}
-          style={{ width: '100%', height: '100%' }}
-        >
-          <Sphere fill="#0f172a" stroke="#1e293b" />
-          <Graticule stroke="#1e293b" strokeWidth={0.3} />
-          <Geographies geography={GEO_URL}>
-            {({ geographies }) =>
-              geographies.map(geo => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  style={{
-                    default: {
-                      fill:        getFill(geo.id),
-                      stroke:      '#334155',
-                      strokeWidth: 0.5,
-                      outline:     'none',
-                      cursor:      answered ? 'default' : 'pointer',
-                    },
-                    hover: {
-                      fill:        getHoverFill(geo.id),
-                      stroke:      '#334155',
-                      strokeWidth: 0.5,
-                      outline:     'none',
-                      cursor:      answered ? 'default' : 'pointer',
-                    },
-                    pressed: {
-                      fill:        '#0d9488',
-                      stroke:      '#334155',
-                      strokeWidth: 0.5,
-                      outline:     'none',
-                    },
-                  }}
-                  onClick={() => { if (!answered) onAnswer(String(geo.id)) }}
-                />
-              ))
-            }
-          </Geographies>
-        </ComposableMap>
-
-        {answered && feedback && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-xl bg-black/80 px-6 py-3 text-xl font-bold text-white shadow-2xl">
-              {feedback}
-            </div>
-          </div>
-        )}
+      <p className="mb-3 text-center text-2xl font-bold text-white">{question.questionText}</p>
+      <div className="mb-4 flex justify-center">
+        <img
+          src={`https://flagcdn.com/w80/${question.country.code.toLowerCase()}.png`}
+          alt={`Flag of ${question.country.name}`}
+          className="rounded border border-slate-600 shadow"
+          style={{ height: 48, objectFit: 'contain' }}
+        />
       </div>
-
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {ALL_CONTINENTS.map(continent => {
+          const isCorrect  = continent === question.correctAnswer
+          const isSelected = selected === continent
+          let cls = 'rounded-xl border px-3 py-3 text-sm font-medium text-center transition-all'
+          if (!answered) {
+            cls += ' border-slate-600 bg-slate-700 text-white hover:border-teal-500 hover:bg-slate-600 cursor-pointer'
+          } else if (isCorrect) {
+            cls += ' border-emerald-500 bg-emerald-700 text-white'
+          } else if (isSelected && !isCorrect) {
+            cls += ' border-rose-600 bg-rose-900 text-rose-300'
+          } else {
+            cls += ' border-slate-700 bg-slate-800 text-slate-500'
+          }
+          return (
+            <button key={continent} type="button" disabled={answered} onClick={() => onAnswer(continent)} className={cls}>
+              {continent}
+              {answered && isCorrect && ' ✓'}
+              {answered && isSelected && !isCorrect && ' ✗'}
+            </button>
+          )
+        })}
+      </div>
+      {answered && feedback && (
+        <p className="mt-3 text-center text-sm font-semibold text-white">{feedback}</p>
+      )}
       {answered && (
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-slate-300">
+        <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-300">
           <img
             src={`https://flagcdn.com/w40/${question.country.code.toLowerCase()}.png`}
             alt=""
