@@ -468,7 +468,7 @@ export default function ChessGame() {
           <div className="flex flex-col items-center">
 
             {/* AI's side — player pieces the AI captured */}
-            <div className="mb-2 flex w-full max-w-[560px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
+            <div className="mb-2 flex w-full max-w-[580px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
               {aiCaptured.map((t, i) => (
                 <div key={i} style={{ width: 22, height: 22 }}>
                   <ChessPiece piece={`${playerColor}${t.toUpperCase()}`} size={22} />
@@ -480,7 +480,8 @@ export default function ChessGame() {
             <div
               className="grid grid-cols-8"
               style={{
-                width: 'min(520px, min(90vw, calc(100vh - 320px)))',
+                width: 'min(calc(100vh - 320px), 580px)',
+                minWidth: '380px',
                 aspectRatio: '1',
                 backgroundImage: 'url(/chess/boards/wood4.jpg)',
                 backgroundSize: 'cover',
@@ -554,7 +555,7 @@ export default function ChessGame() {
             </div>
 
             {/* Player's side — AI pieces the player captured */}
-            <div className="mt-2 flex w-full max-w-[560px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
+            <div className="mt-2 flex w-full max-w-[580px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
               {playerCaptured.map((t, i) => (
                 <div key={i} style={{ width: 22, height: 22 }}>
                   <ChessPiece piece={`${opponentColor}${t.toUpperCase()}`} size={22} />
@@ -562,49 +563,49 @@ export default function ChessGame() {
               ))}
             </div>
 
-            {/* Status section */}
-            <div className="mt-4 w-full max-w-[560px] rounded-xl bg-slate-600 p-4 dark:bg-slate-700">
-              {isThinking ? (
-                <p className="text-center text-lg font-bold text-amber-400">
-                  AI is thinking<span className="animate-pulse">...</span>
-                </p>
-              ) : (
-                <p className={`text-center text-lg font-bold ${statusCls}`}>{statusText}</p>
-              )}
-              {inCheck && !isThinking && (
-                <p className="mt-1 text-center text-sm font-bold text-rose-400">⚠️ You are in Check!</p>
-              )}
-              {/* Player clock */}
-              {timeControl !== 'unlimited' && <div className="mt-3 text-center">
-                <p className="mb-1 text-xs text-slate-400">Your Time</p>
+            {/* Status + clock row */}
+            <div className="mt-2 flex w-full max-w-[580px] items-center justify-between rounded-lg bg-slate-600 px-4 py-2 dark:bg-slate-700">
+              <div>
+                {isThinking ? (
+                  <p className="text-sm font-bold text-amber-400">
+                    AI is thinking<span className="animate-pulse">...</span>
+                  </p>
+                ) : (
+                  <p className={`text-sm font-bold ${statusCls}`}>{statusText}</p>
+                )}
+                {inCheck && !isThinking && (
+                  <p className="text-xs font-bold text-rose-400">⚠️ In Check!</p>
+                )}
+              </div>
+              {timeControl !== 'unlimited' && (
                 <div
                   className={[
-                    'mx-auto rounded-lg px-6 py-3 font-mono font-bold text-2xl',
+                    'rounded-lg px-3 py-1 font-mono font-semibold text-base',
                     playerTime !== null && playerTime < 10
                       ? 'animate-pulse border border-rose-500 bg-slate-800 text-rose-400'
                       : playerTime === null
                         ? 'border border-slate-600 bg-slate-800 text-slate-400'
                         : 'border border-slate-600 bg-slate-800 text-white',
                   ].join(' ')}
-                  style={{ display: 'inline-block', minWidth: 100, textAlign: 'center' }}
+                  style={{ minWidth: 70, textAlign: 'center' }}
                 >
                   {formatTime(playerTime)}
                 </div>
-              </div>}
+              )}
             </div>
 
             {/* Pause + Quit buttons */}
-            <div className="mt-4 flex gap-3">
+            <div className="mt-3 flex gap-2">
               <button
                 onClick={handlePause}
-                className="flex items-center gap-2 rounded-xl bg-zinc-600 px-6 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
+                className="flex items-center gap-1.5 rounded-lg bg-zinc-600 px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
               >
-                <Pause className="h-4 w-4" />
+                <Pause className="h-3.5 w-3.5" />
                 Pause
               </button>
               <button
                 onClick={handleQuit}
-                className="rounded-xl bg-zinc-600 px-6 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
+                className="rounded-lg bg-zinc-600 px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
               >
                 Quit Game
               </button>
