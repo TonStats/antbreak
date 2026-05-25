@@ -748,15 +748,16 @@ function SetupScreen({
 
 // ── Timer Bar ─────────────────────────────────────────────────────────────────
 
-function TimerBar({ timeLeft, maxTime }: { timeLeft: number; maxTime: number }) {
+function TimerBar({ timeLeft, maxTime, questionKey }: { timeLeft: number; maxTime: number; questionKey: number }) {
   const [animated, setAnimated] = useState(false)
 
-  // On mount (each new question via key={currentIdx}): snap to full, then
-  // enable smooth drain after 50 ms so the reset is instant.
+  // Reset animation whenever the question changes — snap bar to full,
+  // then re-enable the smooth drain after 50 ms.
   useEffect(() => {
+    setAnimated(false)
     const t = setTimeout(() => setAnimated(true), 50)
     return () => clearTimeout(t)
-  }, [])
+  }, [questionKey])
 
   const pct      = maxTime > 0 ? (timeLeft / maxTime) * 100 : 0
   const barColor = timeLeft > 6 ? 'bg-green-500' : timeLeft > 3 ? 'bg-yellow-500' : 'bg-rose-500'
@@ -822,11 +823,11 @@ function PlayingScreen({
         />
       </div>
 
-      {/* Timer bar — key forces remount on each question so the bar snaps to full */}
-      <TimerBar key={currentIdx} timeLeft={timeLeft} maxTime={maxTime} />
+      {/* Timer bar — questionKey triggers snap-to-full reset without remounting */}
+      <TimerBar timeLeft={timeLeft} maxTime={maxTime} questionKey={currentIdx} />
 
-      {/* Question content — fade-in on each new question */}
-      <div key={currentIdx} className="geo-question-enter">
+      {/* Question content — composite key ensures uniqueness across play-again sessions */}
+      <div key={`question-${currentIdx}-${question.country.code}`} className="geo-question-enter">
 
         {/* Flag Master */}
         {qMode === 'flags' && (
@@ -939,7 +940,7 @@ function AnswerGrid({ options, qMode, correctAnswer, selected, answered, onAnswe
         }
 
         return (
-          <button key={i} type="button" disabled={answered} onClick={() => onAnswer(display)} className={cls}>
+          <button key={opt.code} type="button" disabled={answered} onClick={() => onAnswer(display)} className={cls}>
             {display}{suffix}
           </button>
         )
