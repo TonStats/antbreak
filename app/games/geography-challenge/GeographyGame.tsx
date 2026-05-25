@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Globe, Maximize2, Minimize2, Volume2, VolumeX } from 'lucide-react'
 import type { GameMode, Difficulty, QuizQuestion, Country } from '@/types/geography'
 import { COUNTRIES } from '@/data/geography'
@@ -58,6 +58,9 @@ const DIFF_CFG: Record<Difficulty, DiffConfig> = {
 }
 
 const COUNTS: QuestionCount[] = [5, 10, 15, 20]
+
+const ANSWER_TIME_SECONDS = 10
+const ADVANCE_DELAY_MS    = 1500
 
 const GRADE_CANVAS_COLOR: Record<string, string> = {
   S: '#facc15', A: '#34d399', B: '#38bdf8', C: '#fb923c', D: '#71717a',
@@ -154,6 +157,11 @@ export default function GeographyGame() {
   const popStreakRef   = useRef({ current: 0, best: 0 })
   const audioCtxRef   = useRef<AudioContext | null>(null)
 
+  // Timing refs — prevent stale closures in setInterval/setTimeout
+  const answeredRef   = useRef(false)
+  const currentIdxRef = useRef(0)
+  const questionsRef  = useRef<QuizQuestion[]>([])
+
   // ── Load streak/daily on mount ─────────────────────────────────────────────
   useEffect(() => {
     setStreak(parseInt(localStorage.getItem('geo_streak') ?? '0', 10))
@@ -185,42 +193,27 @@ export default function GeographyGame() {
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
-  // ── Per-question countdown timer ──────────────────────────────────────────
+  // ── Question timer — single source of truth ──────────────────────────────
+  // Deps intentionally omit handlers (use refs internally to avoid stale closures)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (stage !== 'playing' || answered) return
-    const maxTime = mode === 'daily' ? 10 : 15
-    setTimeLeft(maxTime)
-    const id = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 1000)
+    if (stage !== 'playing') return
+    answeredRef.current = false
+    setTimeLeft(ANSWER_TIME_SECONDS)
+
+    const id = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(id)
+          handleTimeout()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
     return () => clearInterval(id)
-  }, [currentIdx, answered, stage, mode])
-
-  // ── Auto-submit on timeout ────────────────────────────────────────────────
-  useEffect(() => {
-    if (timeLeft > 0 || answered || stage !== 'playing') return
-    const q = questions[currentIdx]
-    if (q?.mode === 'map') setMapFeedback('Time up! ⏱️')
-    setAnswered(true)
-  }, [timeLeft, answered, stage, questions, currentIdx])
-
-  // ── Auto-advance (delay varies by mode) ───────────────────────────────────
-  useEffect(() => {
-    if (!answered) return
-    const qMode = questions[currentIdx]?.mode
-    const delay = qMode === 'map' ? 2000 : qMode === 'population' ? 1500 : 1200
-    const id = setTimeout(() => {
-      const next = currentIdx + 1
-      if (next >= questions.length) {
-        setStage('results')
-      } else {
-        setCurrentIdx(next)
-        setSelected(null)
-        setAnswered(false)
-        setMapFeedback(null)
-        questionStart.current = Date.now()
-      }
-    }, delay)
-    return () => clearTimeout(id)
-  }, [answered, currentIdx, questions])
+  }, [currentIdx, stage]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Save results, fire confetti ───────────────────────────────────────────
   useEffect(() => {
@@ -312,6 +305,34 @@ export default function GeographyGame() {
     }
   }
 
+  // ── Advance + timeout ─────────────────────────────────────────────────────
+
+  function advanceQuestion() {
+    setTimeout(() => {
+      const next = currentIdxRef.current + 1
+      if (next >= questionsRef.current.length) {
+        setStage('results')
+      } else {
+        currentIdxRef.current = next
+        answeredRef.current   = false
+        setCurrentIdx(next)
+        setSelected(null)
+        setAnswered(false)
+        setMapFeedback(null)
+        questionStart.current = Date.now()
+      }
+    }, ADVANCE_DELAY_MS)
+  }
+
+  function handleTimeout() {
+    if (answeredRef.current) return
+    answeredRef.current = true
+    const q = questionsRef.current[currentIdxRef.current]
+    if (q?.mode === 'map') setMapFeedback('Time up! ⏱️')
+    setAnswered(true)
+    advanceQuestion()
+  }
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function toggleFullscreen() {
@@ -324,6 +345,13 @@ export default function GeographyGame() {
 
   function handleStart() {
     const qs = mode === 'daily' ? getDailyQuestions() : generateQuestions(mode, difficulty, qCount)
+    answeredRef.current    = false
+    currentIdxRef.current  = 0
+    questionsRef.current   = qs
+    gameStartRef.current   = Date.now()
+    fastestFlagRef.current = Infinity
+    popStreakRef.current   = { current: 0, best: 0 }
+    questionStart.current  = Date.now()
     setQuestions(qs)
     setCurrentIdx(0)
     setScore(0)
@@ -336,15 +364,12 @@ export default function GeographyGame() {
     setResultStreak(0)
     setFastestFlag(null)
     setPopBestStreak(0)
-    gameStartRef.current   = Date.now()
-    fastestFlagRef.current = Infinity
-    popStreakRef.current   = { current: 0, best: 0 }
-    questionStart.current  = Date.now()
     setStage('playing')
   }
 
   function handleAnswer(display: string) {
-    if (answered) return
+    if (answeredRef.current) return
+    answeredRef.current = true
     const q       = questions[currentIdx]
     const correct = display === q.correctAnswer
     const elapsed = (Date.now() - questionStart.current) / 1000
@@ -367,10 +392,12 @@ export default function GeographyGame() {
     if (correct) setCorrectCount(c => c + 1)
     setSelected(display)
     setAnswered(true)
+    advanceQuestion()
   }
 
   function handleMapAnswer(continent: string) {
-    if (answered) return
+    if (answeredRef.current) return
+    answeredRef.current = true
     const q       = questions[currentIdx]
     const correct = continent === q.correctAnswer
     const elapsed = (Date.now() - questionStart.current) / 1000
@@ -388,9 +415,13 @@ export default function GeographyGame() {
     if (correct) setCorrectCount(c => c + 1)
     setSelected(continent)
     setAnswered(true)
+    advanceQuestion()
   }
 
   function handleRestart() {
+    answeredRef.current   = false
+    currentIdxRef.current = 0
+    questionsRef.current  = []
     setStage('setup')
     setQuestions([])
     setCurrentIdx(0)
@@ -402,6 +433,13 @@ export default function GeographyGame() {
 
   function handlePlayAgain() {
     const qs = generateQuestions(mode, difficulty, qCount)
+    answeredRef.current    = false
+    currentIdxRef.current  = 0
+    questionsRef.current   = qs
+    gameStartRef.current   = Date.now()
+    fastestFlagRef.current = Infinity
+    popStreakRef.current   = { current: 0, best: 0 }
+    questionStart.current  = Date.now()
     setQuestions(qs)
     setCurrentIdx(0)
     setScore(0)
@@ -415,10 +453,6 @@ export default function GeographyGame() {
     setResultStreak(0)
     setFastestFlag(null)
     setPopBestStreak(0)
-    gameStartRef.current   = Date.now()
-    fastestFlagRef.current = Infinity
-    popStreakRef.current   = { current: 0, best: 0 }
-    questionStart.current  = Date.now()
     setStage('playing')
   }
 
@@ -492,8 +526,6 @@ export default function GeographyGame() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const maxTime = mode === 'daily' ? 10 : 15
-
   return (
     <div className="bg-background px-3 py-3 sm:px-6 sm:py-4">
       <div
@@ -552,7 +584,7 @@ export default function GeographyGame() {
             selectedMode={mode}
             mapFeedback={mapFeedback}
             timeLeft={timeLeft}
-            maxTime={maxTime}
+            maxTime={ANSWER_TIME_SECONDS}
             onAnswer={handleAnswer}
             onMapAnswer={handleMapAnswer}
           />
