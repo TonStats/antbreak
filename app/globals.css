@@ -60,32 +60,48 @@
   }
 }
 
-/* Game frame — height-first, fits viewport without scrolling */
+/* Game frame — landscape (width-first) */
 .game-frame {
-  height: calc(100vh - 152px);
-  min-height: 400px;
-  max-height: 620px;
-  width: auto;
+  width: 100%;
+  height: auto;
   aspect-ratio: var(--game-ratio, 16 / 9);
+  max-height: calc(100vh - 100px);
+  min-height: 280px;
+  max-width: 100%;
+}
+
+/* Portrait games — height-first, centred */
+.game-frame[data-portrait="true"] {
+  width: auto;
+  height: calc(100vh - 100px);
+  max-height: 680px;
+  min-height: 300px;
+  aspect-ratio: var(--game-ratio);
   max-width: 100%;
   margin: 0 auto;
 }
+
 @media (max-width: 767px) {
   .game-frame {
-    height: 55vw;
-    min-height: 280px;
-    max-height: 400px;
     width: 100%;
-    aspect-ratio: unset;
+    height: auto;
+    aspect-ratio: var(--game-ratio, 16 / 9);
+    max-height: 420px;
+    min-height: 220px;
+  }
+  .game-frame[data-portrait="true"] {
+    width: auto;
+    height: 75vw;
+    max-height: 520px;
+    min-height: 280px;
+    margin: 0 auto;
   }
 }
 
 /* Sidebar matches game frame height on lg+ screens */
 @media (min-width: 1024px) {
   .game-sidebar {
-    height: calc(100vh - 152px);
-    min-height: 400px;
-    max-height: 620px;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
   }
 }

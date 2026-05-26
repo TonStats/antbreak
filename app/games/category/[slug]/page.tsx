@@ -61,7 +61,7 @@ export default async function CategoryPage({
   const Icon  = ICON_MAP[category.icon]
 
   const iconNode = Icon ? (
-    <div className={`rounded-lg p-2 ${category.color}`}>
+    <div key="category-icon" className={`rounded-lg p-2 ${category.color}`}>
       <Icon className={`h-5 w-5 ${category.textColor}`} />
     </div>
   ) : null

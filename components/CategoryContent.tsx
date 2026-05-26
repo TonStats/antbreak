@@ -16,7 +16,7 @@ const SORT_OPTIONS = [
 
 type SortKey = (typeof SORT_OPTIONS)[number]['value']
 
-const CHUNK_SIZE = 8
+const CHUNK_SIZE = 10
 
 function sortGames(games: Game[], sort: SortKey): Game[] {
   switch (sort) {
@@ -84,12 +84,12 @@ export default function CategoryContent({
         </div>
       </div>
 
-      {/* Game grid — ad injected after every 2 rows (~8 games) */}
+      {/* Game grid — ad injected after every 2 rows (10 games = 2 × 5 cols) */}
       {sorted.length > 0 ? (
         <>
           {chunks.map((chunk, i) => (
             <Fragment key={i}>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {chunk.map((game) => (
                   <GameCard key={game.id} game={game} />
                 ))}

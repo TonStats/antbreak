@@ -27,6 +27,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
   const favorited = favorites.includes(game.slug)
 
   const { width, height } = game.iframeSettings
+  const isPortrait = height > width
 
   useEffect(() => {
     const saved = localStorage.getItem(`rating_${game.slug}`)
@@ -104,6 +105,7 @@ export default function GameEmbed({ game, category }: { game: Game; category?: C
           <div
             className="game-frame relative overflow-hidden rounded-2xl bg-zinc-900"
             style={{ '--game-ratio': `${width} / ${height}` } as React.CSSProperties}
+            data-portrait={isPortrait ? 'true' : 'false'}
           >
             {!playing ? (
               <>
