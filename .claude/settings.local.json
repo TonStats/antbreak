@@ -6,7 +6,8 @@
       "Bash(npx playwright *)",
       "Bash(npm ls *)",
       "Bash(Remove-Item C:/Users/USER/Projects/antbreak/reverse_q1.png, C:/Users/USER/Projects/antbreak/reverse_feedback.png, C:/Users/USER/Projects/antbreak/gauntlet_q1.png, C:/Users/USER/Projects/antbreak/gauntlet_results.png, C:/Users/USER/Projects/antbreak/results_screen.png -ErrorAction SilentlyContinue)",
-      "PowerShell(Remove-Item *)"
+      "PowerShell(Remove-Item *)",
+      "Bash(curl -s http://localhost:3000/games/image-memory-test)"
     ]
   }
 }

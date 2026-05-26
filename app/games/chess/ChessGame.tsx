@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Chess, type Move, type Square, type PieceSymbol } from 'chess.js'
-import { Crown, Flame, Infinity as InfinityIcon, Maximize2, Minimize2, Pause, Play, Timer, Zap } from 'lucide-react'
+import { Crown, Flame, Infinity as InfinityIcon, Maximize2, Minimize2, Pause, Play, Timer, X, Zap } from 'lucide-react'
 import { ChessPiece } from '@/components/chess/ChessPiece'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -226,9 +226,9 @@ export default function ChessGame() {
     const pt = pTime !== undefined ? pTime : TIME_CFG[tc].seconds
     playerTimeRef.current = pt
     setPlayerTime(pt)
-    if (pt === null) return  // unlimited — no countdown
+    if (pt === null) return
     clockRef.current = setInterval(() => {
-      if (chess.current.turn() !== pColor) return  // AI's turn — player clock paused
+      if (chess.current.turn() !== pColor) return
       const next = playerTimeRef.current !== null ? Math.max(0, playerTimeRef.current - 1) : null
       playerTimeRef.current = next; setPlayerTime(next)
       if (next === 0) {
@@ -295,7 +295,7 @@ export default function ChessGame() {
         bumpBoard(); persist(diff, pColor); updateCheck(); resolveGameOver(diff, pColor)
       }
       setIsThinking(false)
-    }, 5000)
+    }, 3000)
   }
 
   // ── Game flow ──────────────────────────────────────────────────────────────
@@ -423,6 +423,12 @@ export default function ChessGame() {
     playerCaptured.reduce((s, t) => s + PIECE_VALS[t], 0) -
     aiCaptured.reduce((s, t) => s + PIECE_VALS[t], 0)
 
+  // ── Board size (responsive + fullscreen) ───────────────────────────────────
+
+  const boardSize = isFullscreen
+    ? 'min(calc(100vh - 200px), calc(100vw - 32px))'
+    : 'min(calc(100vh - 300px), 520px)'
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -433,19 +439,40 @@ export default function ChessGame() {
         className="relative w-full rounded-2xl bg-slate-700 p-4 dark:bg-slate-800"
         style={{ boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 25px 50px rgba(0,0,0,0.4)' }}
       >
-        {/* Fullscreen */}
-        <button
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          className="absolute right-3 top-3 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-        >
-          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </button>
 
-        {/* Title */}
-        <div className="mb-4 flex items-center justify-center gap-2 border-b border-slate-500 pb-3">
-          <Crown className="h-5 w-5 text-violet-400" />
-          <h1 className="text-2xl font-bold text-white">Chess</h1>
+        {/* Title row — Crown + title left, icon buttons right */}
+        <div className="mb-2 flex items-center justify-between border-b border-slate-500 pb-2">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-violet-400" />
+            <h1 className="text-xl font-bold text-white">Chess</h1>
+          </div>
+          <div className="flex items-center gap-1">
+            {stage === 'playing' && (
+              <>
+                <button
+                  onClick={handlePause}
+                  aria-label="Pause"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/60 transition-colors hover:border-white/40 hover:text-white"
+                >
+                  <Pause className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleQuit}
+                  aria-label="Quit"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/60 transition-colors hover:border-red-400/40 hover:text-red-400"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/60 transition-colors hover:border-white/40 hover:text-white"
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {/* ── SETUP ─────────────────────────────────────────────────────── */}
@@ -467,148 +494,135 @@ export default function ChessGame() {
         {stage === 'playing' && (
           <div className="flex flex-col items-center">
 
-            {/* AI's side — player pieces the AI captured */}
-            <div className="mb-2 flex w-full max-w-[580px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
-              {aiCaptured.map((t, i) => (
-                <div key={i} style={{ width: 22, height: 22 }}>
-                  <ChessPiece piece={`${playerColor}${t.toUpperCase()}`} size={22} />
-                </div>
-              ))}
-            </div>
+            {/* Sized wrapper — same width as board */}
+            <div style={{ width: boardSize, maxWidth: '100%' }}>
 
-            {/* Board */}
-            <div
-              className="grid grid-cols-8"
-              style={{
-                width: 'min(calc(100vh - 320px), 580px)',
-                minWidth: '380px',
-                aspectRatio: '1',
-                backgroundImage: 'url(/chess/boards/wood4.jpg)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            >
-              {displayRows.flatMap(row =>
-                displayCols.map(col => {
-                  const sq     = FILES[col] + (8 - row)
-                  const piece  = board[row][col]
-                  const isDest = legalDests.includes(sq)
-                  const isCap  = isDest && piece !== null
-                  const isOwn  = piece?.color === playerColor
-                  const isFirstCol    = col === displayCols[0]
-                  const isLastRow     = row === displayRows[displayRows.length - 1]
-                  const isAiLastMoveSq = aiLastMove !== null && (sq === aiLastMove.from || sq === aiLastMove.to)
+              {/* AI's side — player pieces the AI captured */}
+              <div className="mb-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1 dark:bg-slate-700/50">
+                {aiCaptured.map((t, i) => (
+                  <div key={i} style={{ width: 18, height: 18 }}>
+                    <ChessPiece piece={`${playerColor}${t.toUpperCase()}`} size={18} />
+                  </div>
+                ))}
+              </div>
 
-                  return (
-                    <div
-                      key={sq}
-                      onClick={() => handleSquareClick(sq)}
-                      className={[
-                        'relative flex cursor-pointer select-none items-center justify-center',
-                        sqBg(row, col, sq),
-                        isCap            ? 'ring-2 ring-inset ring-yellow-400/60' : '',
-                        isAiLastMoveSq   ? 'ring-2 ring-yellow-400 ring-inset'    : '',
-                      ].join(' ')}
-                      style={{ aspectRatio: '1' }}
-                    >
-                      {/* Rank label */}
-                      {isFirstCol && (
-                        <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 text-[9px] font-bold leading-none text-amber-200/70">
-                          {8 - row}
-                        </span>
-                      )}
-                      {/* File label */}
-                      {isLastRow && (
-                        <span className="pointer-events-none absolute bottom-0.5 right-0.5 z-10 text-[9px] font-bold leading-none text-amber-200/70">
-                          {FILES[col]}
-                        </span>
-                      )}
-                      {/* AI last move overlay */}
-                      {isAiLastMoveSq && (
-                        <div
-                          className="pointer-events-none absolute inset-0"
-                          style={{ background: 'rgba(255,214,0,0.2)' }}
-                        />
-                      )}
-                      {/* Legal move dot */}
-                      {isDest && !piece && (
-                        <div className="pointer-events-none h-[28%] w-[28%] rounded-full bg-black/30" />
-                      )}
-                      {/* Piece */}
-                      {piece && (
-                        <div
-                          className={[
-                            'pointer-events-none h-[86%] w-[86%]',
-                            isOwn && !isThinking ? 'transition-transform hover:scale-110' : '',
-                          ].join(' ')}
-                        >
-                          <ChessPiece
-                            piece={`${piece.color}${piece.type.toUpperCase()}`}
-                            size={64}
+              {/* Board */}
+              <div
+                className="grid grid-cols-8"
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  backgroundImage: 'url(/chess/boards/wood4.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                {displayRows.flatMap(row =>
+                  displayCols.map(col => {
+                    const sq     = FILES[col] + (8 - row)
+                    const piece  = board[row][col]
+                    const isDest = legalDests.includes(sq)
+                    const isCap  = isDest && piece !== null
+                    const isOwn  = piece?.color === playerColor
+                    const isFirstCol    = col === displayCols[0]
+                    const isLastRow     = row === displayRows[displayRows.length - 1]
+                    const isAiLastMoveSq = aiLastMove !== null && (sq === aiLastMove.from || sq === aiLastMove.to)
+
+                    return (
+                      <div
+                        key={sq}
+                        onClick={() => handleSquareClick(sq)}
+                        className={[
+                          'relative flex cursor-pointer select-none items-center justify-center',
+                          sqBg(row, col, sq),
+                          isCap            ? 'ring-2 ring-inset ring-yellow-400/60' : '',
+                          isAiLastMoveSq   ? 'ring-2 ring-yellow-400 ring-inset'    : '',
+                        ].join(' ')}
+                        style={{ aspectRatio: '1' }}
+                      >
+                        {/* Rank label */}
+                        {isFirstCol && (
+                          <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 text-[9px] font-bold leading-none text-amber-200/70">
+                            {8 - row}
+                          </span>
+                        )}
+                        {/* File label */}
+                        {isLastRow && (
+                          <span className="pointer-events-none absolute bottom-0.5 right-0.5 z-10 text-[9px] font-bold leading-none text-amber-200/70">
+                            {FILES[col]}
+                          </span>
+                        )}
+                        {/* AI last move overlay */}
+                        {isAiLastMoveSq && (
+                          <div
+                            className="pointer-events-none absolute inset-0"
+                            style={{ background: 'rgba(255,214,0,0.2)' }}
                           />
-                        </div>
-                      )}
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            {/* Player's side — AI pieces the player captured */}
-            <div className="mt-2 flex w-full max-w-[580px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1.5 dark:bg-slate-700/50">
-              {playerCaptured.map((t, i) => (
-                <div key={i} style={{ width: 22, height: 22 }}>
-                  <ChessPiece piece={`${opponentColor}${t.toUpperCase()}`} size={22} />
-                </div>
-              ))}
-            </div>
-
-            {/* Status + clock row */}
-            <div className="mt-2 flex w-full max-w-[580px] items-center justify-between rounded-lg bg-slate-600 px-4 py-2 dark:bg-slate-700">
-              <div>
-                {isThinking ? (
-                  <p className="text-sm font-bold text-amber-400">
-                    AI is thinking<span className="animate-pulse">...</span>
-                  </p>
-                ) : (
-                  <p className={`text-sm font-bold ${statusCls}`}>{statusText}</p>
-                )}
-                {inCheck && !isThinking && (
-                  <p className="text-xs font-bold text-rose-400">⚠️ In Check!</p>
+                        )}
+                        {/* Legal move dot */}
+                        {isDest && !piece && (
+                          <div className="pointer-events-none h-[28%] w-[28%] rounded-full bg-black/30" />
+                        )}
+                        {/* Piece */}
+                        {piece && (
+                          <div
+                            className={[
+                              'pointer-events-none h-[86%] w-[86%]',
+                              isOwn && !isThinking ? 'transition-transform hover:scale-110' : '',
+                            ].join(' ')}
+                          >
+                            <ChessPiece
+                              piece={`${piece.color}${piece.type.toUpperCase()}`}
+                              size={64}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
                 )}
               </div>
-              {timeControl !== 'unlimited' && (
-                <div
-                  className={[
-                    'rounded-lg px-3 py-1 font-mono font-semibold text-base',
-                    playerTime !== null && playerTime < 10
-                      ? 'animate-pulse border border-rose-500 bg-slate-800 text-rose-400'
-                      : playerTime === null
-                        ? 'border border-slate-600 bg-slate-800 text-slate-400'
-                        : 'border border-slate-600 bg-slate-800 text-white',
-                  ].join(' ')}
-                  style={{ minWidth: 70, textAlign: 'center' }}
-                >
-                  {formatTime(playerTime)}
-                </div>
-              )}
-            </div>
 
-            {/* Pause + Quit buttons */}
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={handlePause}
-                className="flex items-center gap-1.5 rounded-lg bg-zinc-600 px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
-              >
-                <Pause className="h-3.5 w-3.5" />
-                Pause
-              </button>
-              <button
-                onClick={handleQuit}
-                className="rounded-lg bg-zinc-600 px-4 py-2 text-xs font-medium text-zinc-200 transition-colors hover:bg-zinc-500"
-              >
-                Quit Game
-              </button>
+              {/* Player's side — AI pieces the player captured */}
+              <div className="mt-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1 dark:bg-slate-700/50">
+                {playerCaptured.map((t, i) => (
+                  <div key={i} style={{ width: 18, height: 18 }}>
+                    <ChessPiece piece={`${opponentColor}${t.toUpperCase()}`} size={18} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Status + clock row */}
+              <div className="mt-1 flex items-center justify-between rounded-lg bg-slate-600/50 px-3 py-2 text-sm dark:bg-slate-700/50">
+                <div>
+                  {isThinking ? (
+                    <p className="font-bold text-amber-400">
+                      AI is thinking<span className="animate-pulse">...</span>
+                    </p>
+                  ) : (
+                    <p className={`font-bold ${statusCls}`}>{statusText}</p>
+                  )}
+                  {inCheck && !isThinking && (
+                    <p className="text-xs font-bold text-rose-400">⚠️ In Check!</p>
+                  )}
+                </div>
+                {timeControl !== 'unlimited' && (
+                  <div
+                    className={[
+                      'rounded-lg px-3 py-1 font-mono text-base font-semibold',
+                      playerTime !== null && playerTime < 10
+                        ? 'animate-pulse border border-rose-500 bg-slate-800 text-rose-400'
+                        : playerTime === null
+                          ? 'border border-slate-600 bg-slate-800 text-slate-400'
+                          : 'border border-slate-600 bg-slate-800 text-white',
+                    ].join(' ')}
+                    style={{ minWidth: 70, textAlign: 'center' }}
+                  >
+                    {formatTime(playerTime)}
+                  </div>
+                )}
+              </div>
+
             </div>
           </div>
         )}
@@ -650,11 +664,12 @@ function SetupScreen({
   onResume:      () => void
 }) {
   return (
-    <div className="mx-auto max-w-md">
-      <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
+    <div className="mx-auto max-w-md overflow-y-auto">
+
+      <p className="mb-1 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
         Choose Difficulty
       </p>
-      <div className="mb-10 grid grid-cols-3 gap-2">
+      <div className="mb-3 grid grid-cols-3 gap-2">
         {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => {
           const cfg = DIFF_CFG[d]
           return (
@@ -662,30 +677,30 @@ function SetupScreen({
               key={d}
               onClick={() => onDiff(d)}
               className={[
-                'flex flex-col items-center rounded-xl border px-3 py-3 text-sm font-medium transition-all',
+                'flex flex-col items-center gap-0.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
                 difficulty === d
                   ? cfg.sel
                   : 'border-zinc-600 bg-zinc-800 text-zinc-300 hover:bg-zinc-700',
               ].join(' ')}
             >
-              <span className="mb-1 text-xl">{cfg.emoji}</span>
+              <span className="text-base">{cfg.emoji}</span>
               <span>{cfg.label}</span>
-              <span className="mt-0.5 text-[11px] opacity-70">{cfg.desc}</span>
+              <span className="text-[10px] opacity-70">{cfg.desc}</span>
             </button>
           )
         })}
       </div>
 
-      <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
+      <p className="mb-1 mt-3 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
         Choose Side
       </p>
-      <div className="mb-10 grid grid-cols-2 gap-3">
+      <div className="mb-3 grid grid-cols-2 gap-2">
         {(['w', 'b'] as ChessColor[]).map(c => (
           <button
             key={c}
             onClick={() => onColor(c)}
             className={[
-              'flex items-center justify-center gap-2 rounded-xl border-2 py-4 text-sm font-bold transition-all',
+              'flex items-center justify-center gap-3 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-all',
               playerColor === c
                 ? c === 'w'
                   ? 'border-violet-500 bg-white text-zinc-900'
@@ -693,33 +708,33 @@ function SetupScreen({
                 : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700',
             ].join(' ')}
           >
-            <span className="text-2xl">{c === 'w' ? '♔' : '♚'}</span>
+            <span className="text-lg">{c === 'w' ? '♔' : '♚'}</span>
             {c === 'w' ? 'Play as White' : 'Play as Black'}
           </button>
         ))}
       </div>
 
-      <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
+      <p className="mb-1 mt-3 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
         Choose Time Control
       </p>
-      <div className="mb-10 grid grid-cols-4 gap-2">
+      <div className="mb-3 grid grid-cols-4 gap-2">
         {(['bullet', 'blitz', 'rapid', 'unlimited'] as TimeControl[]).map(tc => {
-          const cfg = TIME_CFG[tc]
+          const cfg  = TIME_CFG[tc]
           const Icon = tc === 'bullet' ? Zap : tc === 'blitz' ? Flame : tc === 'rapid' ? Timer : InfinityIcon
           return (
             <button
               key={tc}
               onClick={() => onTimeControl(tc)}
               className={[
-                'flex flex-col items-center rounded-xl border px-2 py-3 text-sm font-medium transition-all',
+                'flex flex-col items-center gap-0.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
                 timeControl === tc
                   ? cfg.sel
                   : 'border-zinc-600 bg-zinc-800 text-zinc-300 hover:bg-zinc-700',
               ].join(' ')}
             >
-              <Icon className="mb-1 h-4 w-4" />
-              <span className="text-xs font-semibold">{cfg.label}</span>
-              <span className="mt-0.5 text-[10px] opacity-70">{cfg.sub}</span>
+              <Icon className="h-3.5 w-3.5" />
+              <span className="font-semibold">{cfg.label}</span>
+              <span className="text-[10px] opacity-70">{cfg.sub}</span>
             </button>
           )
         })}
@@ -727,20 +742,29 @@ function SetupScreen({
 
       <button
         onClick={onStart}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-4 text-lg font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-2 text-sm font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
       >
-        <Play className="h-5 w-5" />
+        <Play className="h-4 w-4" />
         Start Game
       </button>
 
       {savedGame && (
         <button
           onClick={onResume}
-          className="mt-3 w-full rounded-xl bg-amber-500 py-3 text-base font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 active:scale-[0.98]"
+          className="mt-2 w-full rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 active:scale-[0.98]"
         >
-          Resume Saved Game
+          Resume Game
         </button>
       )}
+
+      <div className="mt-1 text-center">
+        <a
+          href="#how-to-play"
+          className="text-xs text-slate-400/60 underline transition-colors hover:text-slate-300/80"
+        >
+          How to Play
+        </a>
+      </div>
 
     </div>
   )

@@ -155,5 +155,42 @@ export const GAMES: Game[] = [
     tags: ['keyboard', 'shortcuts', 'productivity', 'typing', 'skills'],
     iframeSettings: { width: 960, height: 600, allowFullscreen: true },
   },
+  {
+    id: 'image-memory-test',
+    name: 'Image Memory Test',
+    slug: 'image-memory-test',
+    category: 'original-games',
+    description:
+      'Three memory training modes test different aspects of your visual recall. ' +
+      'Memorize emoji sequences, match grid pairs, or tackle the daily flash challenge. ' +
+      'How sharp is your memory?',
+    howToPlay: [
+      'Choose Sequence, Grid Match, or Daily Flash mode',
+      'In Sequence mode, memorize the emoji order then recreate it',
+      'In Grid Match, flip cards to find matching emoji pairs',
+      'In Daily Flash, study the image then answer questions about it',
+      'Difficulty increases with each level — stay focused!',
+    ],
+    tips: [
+      'Group emojis into mini-stories to memorize sequences faster',
+      'In Grid Match, build a mental map of where each emoji is',
+      'Daily Flash resets every day — keep your streak going',
+    ],
+    thumbnail: '/thumbnails/image-memory-test.webp',
+    gameUrl: '/games/image-memory-test',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-05-26',
+    tags: ['memory', 'matching', 'emoji', 'brain', 'daily'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]
