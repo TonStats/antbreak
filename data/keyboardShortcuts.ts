@@ -18,13 +18,13 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { id: 'win-save',        action: 'Save',                   keys: { windows: ['Ctrl', 'S'],        mac: ['Cmd', 'S']        }, category: 'windows', difficulty: 'easy',   hint: 'Save current file or document' },
       { id: 'win-find',        action: 'Find',                   keys: { windows: ['Ctrl', 'F'],        mac: ['Cmd', 'F']        }, category: 'windows', difficulty: 'easy',   hint: 'Open find/search dialog' },
       { id: 'win-print',       action: 'Print',                  keys: { windows: ['Ctrl', 'P'],        mac: ['Cmd', 'P']        }, category: 'windows', difficulty: 'easy',   hint: 'Print current document' },
-      { id: 'win-new',         action: 'New',                    keys: { windows: ['Ctrl', 'N'],        mac: ['Cmd', 'N']        }, category: 'windows', difficulty: 'easy',   hint: 'Create new file or window' },
+      { id: 'win-new',         action: 'New',                    keys: { windows: ['Ctrl', 'N'],        mac: ['Cmd', 'N']        }, category: 'windows', difficulty: 'easy',   hint: 'Create new file or window', dangerous: true },
       { id: 'win-open',        action: 'Open',                   keys: { windows: ['Ctrl', 'O'],        mac: ['Cmd', 'O']        }, category: 'windows', difficulty: 'easy',   hint: 'Open file dialog' },
-      { id: 'win-close',       action: 'Close Window',           keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'W']        }, category: 'windows', difficulty: 'easy',   hint: 'Close current window or app' },
+      { id: 'win-close',       action: 'Close Window',           keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'W']        }, category: 'windows', difficulty: 'easy',   hint: 'Close current window or app', dangerous: true },
       // medium
       { id: 'win-switch-app',  action: 'Switch App',             keys: { windows: ['Alt', 'Tab'],       mac: ['Cmd', 'Tab']      }, category: 'windows', difficulty: 'medium', hint: 'Cycle through open applications' },
       { id: 'win-desktop',     action: 'Show Desktop',           keys: { windows: ['Win', 'D'],         mac: ['F11']             }, category: 'windows', difficulty: 'medium', hint: 'Minimize all windows to show desktop' },
-      { id: 'win-lock',        action: 'Lock Screen',            keys: { windows: ['Win', 'L'],         mac: ['Ctrl', 'Cmd', 'Q']}, category: 'windows', difficulty: 'medium', hint: 'Lock your computer' },
+      { id: 'win-lock',        action: 'Lock Screen',            keys: { windows: ['Win', 'L'],         mac: ['Ctrl', 'Cmd', 'Q']}, category: 'windows', difficulty: 'medium', hint: 'Lock your computer', dangerous: true },
       { id: 'win-task-mgr',    action: 'Task Manager',           keys: { windows: ['Ctrl', 'Shift', 'Esc'], mac: ['Cmd', 'Space'] }, category: 'windows', difficulty: 'medium', hint: 'Open Task Manager (Spotlight on Mac)' },
       { id: 'win-explorer',    action: 'File Explorer',          keys: { windows: ['Win', 'E'],         mac: ['Cmd', 'Space']    }, category: 'windows', difficulty: 'medium', hint: 'Open file manager' },
       { id: 'win-run',         action: 'Run Dialog',             keys: { windows: ['Win', 'R'],         mac: ['Cmd', 'Space']    }, category: 'windows', difficulty: 'medium', hint: 'Open run command dialog' },
@@ -65,10 +65,10 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { id: 'mac-redo',        action: 'Redo',                   keys: { windows: ['Ctrl', 'Shift', 'Z'], mac: ['Cmd', 'Shift', 'Z'] }, category: 'mac', difficulty: 'easy',   hint: 'Redo undone action' },
       { id: 'mac-select-all',  action: 'Select All',             keys: { windows: ['Ctrl', 'A'],        mac: ['Cmd', 'A']           }, category: 'mac', difficulty: 'easy',   hint: 'Select all items' },
       { id: 'mac-save',        action: 'Save',                   keys: { windows: ['Ctrl', 'S'],        mac: ['Cmd', 'S']           }, category: 'mac', difficulty: 'easy',   hint: 'Save current document' },
-      { id: 'mac-quit',        action: 'Quit App',               keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'Q']           }, category: 'mac', difficulty: 'easy',   hint: 'Quit the current application' },
+      { id: 'mac-quit',        action: 'Quit App',               keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'Q']           }, category: 'mac', difficulty: 'easy',   hint: 'Quit the current application', dangerous: true },
       { id: 'mac-spotlight',   action: 'Spotlight Search',       keys: { windows: ['Win', 'S'],         mac: ['Cmd', 'Space']       }, category: 'mac', difficulty: 'easy',   hint: 'Open Spotlight search' },
-      { id: 'mac-new-tab',     action: 'New Tab',                keys: { windows: ['Ctrl', 'T'],        mac: ['Cmd', 'T']           }, category: 'mac', difficulty: 'easy',   hint: 'Open a new browser or Finder tab' },
-      { id: 'mac-close-tab',   action: 'Close Tab',              keys: { windows: ['Ctrl', 'W'],        mac: ['Cmd', 'W']           }, category: 'mac', difficulty: 'easy',   hint: 'Close current tab or window' },
+      { id: 'mac-new-tab',     action: 'New Tab',                keys: { windows: ['Ctrl', 'T'],        mac: ['Cmd', 'T']           }, category: 'mac', difficulty: 'easy',   hint: 'Open a new browser or Finder tab', dangerous: true },
+      { id: 'mac-close-tab',   action: 'Close Tab',              keys: { windows: ['Ctrl', 'W'],        mac: ['Cmd', 'W']           }, category: 'mac', difficulty: 'easy',   hint: 'Close current tab or window', dangerous: true },
       { id: 'mac-find',        action: 'Find',                   keys: { windows: ['Ctrl', 'F'],        mac: ['Cmd', 'F']           }, category: 'mac', difficulty: 'easy',   hint: 'Open find dialog' },
       // medium
       { id: 'mac-mission-ctrl',action: 'Mission Control',        keys: { windows: ['Win', 'Tab'],       mac: ['Ctrl', 'Up']         }, category: 'mac', difficulty: 'medium', hint: 'View all open windows' },
@@ -80,14 +80,14 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { id: 'mac-hide-app',    action: 'Hide App',               keys: { windows: ['Win', 'D'],         mac: ['Cmd', 'H']           }, category: 'mac', difficulty: 'medium', hint: 'Hide the current application' },
       { id: 'mac-minimize',    action: 'Minimize Window',        keys: { windows: ['Win', 'Down'],      mac: ['Cmd', 'M']           }, category: 'mac', difficulty: 'medium', hint: 'Minimize current window to Dock' },
       { id: 'mac-emoji',       action: 'Emoji & Symbols',        keys: { windows: ['Win', '.'],         mac: ['Ctrl', 'Cmd', 'Space'] }, category: 'mac', difficulty: 'medium', hint: 'Open Character Viewer' },
-      { id: 'mac-lock',        action: 'Lock Screen',            keys: { windows: ['Win', 'L'],         mac: ['Ctrl', 'Cmd', 'Q']   }, category: 'mac', difficulty: 'medium', hint: 'Instantly lock the screen' },
+      { id: 'mac-lock',        action: 'Lock Screen',            keys: { windows: ['Win', 'L'],         mac: ['Ctrl', 'Cmd', 'Q']   }, category: 'mac', difficulty: 'medium', hint: 'Instantly lock the screen', dangerous: true },
       // hard
       { id: 'mac-paste-match', action: 'Paste and Match Style',  keys: { windows: ['Ctrl', 'Shift', 'V'], mac: ['Cmd', 'Opt', 'Shift', 'V'] }, category: 'mac', difficulty: 'hard', hint: 'Paste without carrying over formatting' },
       { id: 'mac-show-desktop',action: 'Show Desktop',           keys: { windows: ['Win', 'D'],         mac: ['Fn', 'F11']          }, category: 'mac', difficulty: 'hard',   hint: 'Reveal desktop by hiding all windows' },
       { id: 'mac-dict',        action: 'Lookup in Dictionary',   keys: { windows: ['Win', 'S'],         mac: ['Ctrl', 'Cmd', 'D']   }, category: 'mac', difficulty: 'hard',   hint: 'Look up selected word in Dictionary' },
       { id: 'mac-show-hidden', action: 'Show Hidden Files',      keys: { windows: ['Ctrl', 'H'],        mac: ['Cmd', 'Shift', '.']  }, category: 'mac', difficulty: 'hard',   hint: 'Toggle hidden files in Finder' },
       { id: 'mac-prev-app',    action: 'Previous App',           keys: { windows: ['Shift', 'Alt', 'Tab'], mac: ['Cmd', 'Shift', 'Tab'] }, category: 'mac', difficulty: 'hard',   hint: 'Cycle backward through open apps' },
-      { id: 'mac-close-all',   action: 'Close All Windows',      keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'Opt', 'W']    }, category: 'mac', difficulty: 'hard',   hint: 'Close all windows of current app' },
+      { id: 'mac-close-all',   action: 'Close All Windows',      keys: { windows: ['Alt', 'F4'],        mac: ['Cmd', 'Opt', 'W']    }, category: 'mac', difficulty: 'hard',   hint: 'Close all windows of current app', dangerous: true },
       { id: 'mac-safe-sleep',  action: 'Safe Sleep',             keys: { windows: ['Win', 'X'],         mac: ['Ctrl', 'Opt', 'Cmd', 'Power'] }, category: 'mac', difficulty: 'hard', hint: 'Put Mac into safe sleep' },
       { id: 'mac-app-switcher',action: 'App Switcher (prev)',    keys: { windows: ['Alt', 'Tab'],       mac: ['Cmd', 'Tab']         }, category: 'mac', difficulty: 'hard',   hint: 'Open App Switcher overlay' },
       { id: 'mac-notif-center',action: 'Notification Center',    keys: { windows: ['Win', 'N'],         mac: ['Ctrl', 'F2']         }, category: 'mac', difficulty: 'hard',   hint: 'Show/hide Notification Center' },
@@ -156,7 +156,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       // easy
       { id: 'vsc-cmd-palette', action: 'Command Palette',        keys: { windows: ['Ctrl', 'Shift', 'P'], mac: ['Cmd', 'Shift', 'P'] }, category: 'vscode', difficulty: 'easy',   hint: 'Open command palette to run any command' },
       { id: 'vsc-quick-open', action: 'Quick Open File',         keys: { windows: ['Ctrl', 'P'],        mac: ['Cmd', 'P']           }, category: 'vscode', difficulty: 'easy',   hint: 'Quickly open any file by name' },
-      { id: 'vsc-new-file',   action: 'New File',                keys: { windows: ['Ctrl', 'N'],        mac: ['Cmd', 'N']           }, category: 'vscode', difficulty: 'easy',   hint: 'Create a new untitled file' },
+      { id: 'vsc-new-file',   action: 'New File',                keys: { windows: ['Ctrl', 'N'],        mac: ['Cmd', 'N']           }, category: 'vscode', difficulty: 'easy',   hint: 'Create a new untitled file', dangerous: true },
       { id: 'vsc-save',       action: 'Save',                    keys: { windows: ['Ctrl', 'S'],        mac: ['Cmd', 'S']           }, category: 'vscode', difficulty: 'easy',   hint: 'Save current file' },
       { id: 'vsc-save-all',   action: 'Save All',                keys: { windows: ['Ctrl', 'K', 'S'],   mac: ['Cmd', 'Opt', 'S']    }, category: 'vscode', difficulty: 'easy',   hint: 'Save all open files' },
       { id: 'vsc-undo',       action: 'Undo',                    keys: { windows: ['Ctrl', 'Z'],        mac: ['Cmd', 'Z']           }, category: 'vscode', difficulty: 'easy',   hint: 'Undo last edit' },
@@ -176,7 +176,7 @@ export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { id: 'vsc-peek-def',   action: 'Peek Definition',         keys: { windows: ['Alt', 'F12'],       mac: ['Opt', 'F12']         }, category: 'vscode', difficulty: 'medium', hint: 'Inline preview of definition' },
       { id: 'vsc-format',     action: 'Format Document',         keys: { windows: ['Shift', 'Alt', 'F'], mac: ['Shift', 'Opt', 'F'] }, category: 'vscode', difficulty: 'medium', hint: 'Auto-format the entire document' },
       { id: 'vsc-split-editor',action: 'Split Editor',           keys: { windows: ['Ctrl', '\\'],       mac: ['Cmd', '\\']          }, category: 'vscode', difficulty: 'medium', hint: 'Split editor into two panes' },
-      { id: 'vsc-close-tab',  action: 'Close Tab',               keys: { windows: ['Ctrl', 'W'],        mac: ['Cmd', 'W']           }, category: 'vscode', difficulty: 'medium', hint: 'Close current editor tab' },
+      { id: 'vsc-close-tab',  action: 'Close Tab',               keys: { windows: ['Ctrl', 'W'],        mac: ['Cmd', 'W']           }, category: 'vscode', difficulty: 'medium', hint: 'Close current editor tab', dangerous: true },
       // hard
       { id: 'vsc-grep',       action: 'Search Across Files',     keys: { windows: ['Ctrl', 'Shift', 'F'], mac: ['Cmd', 'Shift', 'F'] }, category: 'vscode', difficulty: 'hard',   hint: 'Global search across all files' },
       { id: 'vsc-rename',     action: 'Rename Symbol',           keys: { windows: ['F2'],               mac: ['F2']                 }, category: 'vscode', difficulty: 'hard',   hint: 'Rename symbol at all references' },
@@ -299,8 +299,8 @@ export function getRandomShortcuts(
   const cat = SHORTCUT_CATEGORIES.find((c) => c.id === categoryId)
   if (!cat) return []
   const pool = difficulty
-    ? cat.shortcuts.filter((s) => s.difficulty === difficulty)
-    : cat.shortcuts
+    ? cat.shortcuts.filter((s) => s.difficulty === difficulty && !s.dangerous)
+    : cat.shortcuts.filter((s) => !s.dangerous)
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
   return shuffled.slice(0, Math.min(count, shuffled.length))
 }

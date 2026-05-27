@@ -42,9 +42,7 @@ export default function GeographyChallengePage() {
 
         {/* Left: game */}
         <div className="min-w-0 flex-1">
-          <div style={{ height: 'calc(100vh - 100px)', minHeight: '500px', overflowY: 'auto' }}>
-            <GeographyGame />
-          </div>
+          <GeographyGame />
         </div>
 
         {/* Right: sidebar — desktop only */}

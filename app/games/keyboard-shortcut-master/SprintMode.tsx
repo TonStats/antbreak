@@ -12,11 +12,13 @@ interface Props {
   showKeyboard: boolean
   onQuit: () => void
   onFinish: (score: number, correct: number, total: number, wrongIds: string[]) => void
+  onTimeChange?: (t: number) => void
   gauntlet?: boolean
 }
 
-const Q_TOTAL = 10
-const Q_TIME  = 5
+const Q_TOTAL             = 10
+const ANSWER_TIME_SECONDS = 13
+const POINTS_PER_CORRECT  = 5
 const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2 }
 
 function normalizeEventKey(e: KeyboardEvent): string {
@@ -36,13 +38,9 @@ function keysMatch(a: string[], b: string[]): boolean {
   return b.every(k => s.has(k.toLowerCase()))
 }
 
-function formatKeys(keys: string[]): string {
-  return keys.join(' + ')
-}
+type Feedback = { type: 'correct' | 'wrong' | null; msg: string }
 
-type Feedback = { type: 'correct' | 'wrong' | null; msg: string; bonus: boolean }
-
-export default function SprintMode({ software, difficulty, os, showKeyboard, onQuit, onFinish, gauntlet }: Props) {
+export default function SprintMode({ software, difficulty, os, showKeyboard, onQuit, onFinish, onTimeChange, gauntlet }: Props) {
   const [questions] = useState<Shortcut[]>(() => {
     const qs = gauntlet
       ? getRandomShortcuts(software, Q_TOTAL)
@@ -53,12 +51,11 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
   const [currentQ, setCurrentQ]         = useState(0)
   const [score, setScore]               = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
-  const [timeLeft, setTimeLeft]         = useState(Q_TIME)
   const [pressedKeys, setPressedKeys]   = useState<string[]>([])
   const [highlightKeys, setHighlightKeys] = useState<string[]>([])
   const [wrongKeys, setWrongKeys]       = useState<string[]>([])
   const [hintKeys, setHintKeys]         = useState<string[]>([])
-  const [feedback, setFeedback]         = useState<Feedback>({ type: null, msg: '', bonus: false })
+  const [feedback, setFeedback]         = useState<Feedback>({ type: null, msg: '' })
   const [totalTime, setTotalTime]       = useState(0)
 
   const answeredRef       = useRef(false)
@@ -73,6 +70,7 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
 
   const total   = questions.length
   const catInfo = SHORTCUT_CATEGORIES.find(c => c.id === software)
+  const progressPct = (currentQ / total) * 100
 
   useEffect(() => {
     const iv = setInterval(() => setTotalTime(t => t + 1), 1000)
@@ -85,20 +83,18 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
 
     const q = questionsRef.current[currentQRef.current]
     if (!q) return
-    const correct    = q.keys[os]
-    const isTimeout  = keys.length === 0
-    const isCorrect  = !isTimeout && keysMatch(keys, correct)
-    const timeTaken  = (Date.now() - questionStartRef.current) / 1000
+    const correct   = q.keys[os]
+    const isTimeout = keys.length === 0
+    const isCorrect = !isTimeout && keysMatch(keys, correct)
 
     if (isCorrect) {
       answeredRef.current = true
       clearInterval(timerRef.current)
-      const bonus = timeTaken < 2
-      scoreRef.current   += bonus ? 150 : 100
+      scoreRef.current   += POINTS_PER_CORRECT
       correctRef.current += 1
       setScore(scoreRef.current)
       setCorrectCount(correctRef.current)
-      setFeedback({ type: 'correct', msg: '✓ Correct!', bonus })
+      setFeedback({ type: 'correct', msg: '✓ Correct!' })
       setHighlightKeys(correct)
       setTimeout(advance, 1500)
       return
@@ -108,7 +104,7 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
       answeredRef.current = true
       clearInterval(timerRef.current)
       if (!wrongIdsRef.current.includes(q.id)) wrongIdsRef.current.push(q.id)
-      setFeedback({ type: 'wrong', msg: '✗ Time out!', bonus: false })
+      setFeedback({ type: 'wrong', msg: '✗ Time out!' })
       setHighlightKeys(correct)
       setTimeout(advance, 1500)
       return
@@ -118,15 +114,13 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
     wrongAttemptsRef.current += 1
     setWrongKeys(keys)
     setTimeout(() => setWrongKeys([]), 300)
-    // After second wrong attempt, show first correct key as amber hint
     if (wrongAttemptsRef.current >= 2 && correct.length > 0) {
       setHintKeys([correct[0]])
     }
-    // Track that this question was attempted wrong (for history)
     if (!wrongIdsRef.current.includes(q.id)) {
       wrongIdsRef.current.push(q.id)
     }
-  }, [os, onFinish]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [os]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function advance() {
     const next = currentQRef.current + 1
@@ -138,25 +132,24 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
     answeredRef.current = false
     questionStartRef.current = Date.now()
     setCurrentQ(next)
-    setFeedback({ type: null, msg: '', bonus: false })
+    setFeedback({ type: null, msg: '' })
     setHighlightKeys([])
     setWrongKeys([])
     setPressedKeys([])
-    setTimeLeft(Q_TIME)
   }
 
   // ── Per-question countdown ─────────────────────────────────────────────────
   useEffect(() => {
-    answeredRef.current    = false
+    answeredRef.current      = false
     wrongAttemptsRef.current = 0
     questionStartRef.current = Date.now()
     setHintKeys([])
-    setTimeLeft(Q_TIME)
+    onTimeChange?.(ANSWER_TIME_SECONDS)
 
     const start = Date.now()
     timerRef.current = setInterval(() => {
-      const remaining = Math.max(0, Q_TIME - (Date.now() - start) / 1000)
-      setTimeLeft(remaining)
+      const remaining = Math.max(0, ANSWER_TIME_SECONDS - (Date.now() - start) / 1000)
+      onTimeChange?.(Math.ceil(remaining))
       if (remaining <= 0) {
         clearInterval(timerRef.current)
         submitAnswer([])
@@ -164,13 +157,19 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
     }, 100)
 
     return () => clearInterval(timerRef.current)
-  }, [currentQ, submitAnswer])
+  }, [currentQ, submitAnswer, onTimeChange])
 
-  // ── Physical keyboard listener ─────────────────────────────────────────────
+  // ── Physical keyboard listener (capture phase) ─────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (answeredRef.current) return
+      const allowedKeys = ['Escape', 'F11', 'F5']
+      if (allowedKeys.includes(e.key)) return
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'J'].includes(e.key.toUpperCase())) return
+
       e.preventDefault()
+      e.stopPropagation()
+
+      if (answeredRef.current) return
 
       const keys: string[] = []
       if (e.ctrlKey)  keys.push('Ctrl')
@@ -188,15 +187,16 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
       }
     }
 
-    const handleKeyUp = () => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      e.preventDefault()
       if (!answeredRef.current) setPressedKeys([])
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    window.addEventListener('keyup',   handleKeyUp,   { capture: true })
     return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('keydown', handleKeyDown, { capture: true })
+      window.removeEventListener('keyup',   handleKeyUp,   { capture: true })
     }
   }, [os, submitAnswer])
 
@@ -221,10 +221,6 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
   const question    = questions[currentQ]
   const correctKeys = question?.keys[os] ?? []
 
-  const timerPct    = (timeLeft / Q_TIME) * 100
-  const timerColor  = timeLeft > 3 ? 'bg-green-500' : timeLeft > 1 ? 'bg-yellow-500' : 'bg-red-500'
-  const progressPct = (currentQ / total) * 100
-
   const showKbd = showKeyboard || (typeof window !== 'undefined' && window.innerWidth < 768)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
@@ -240,33 +236,18 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
     <div className="flex flex-col gap-3">
 
       {/* ── Top bar ───────────────────────────────────────── */}
-      <div className="flex items-center justify-between h-10">
+      <div className="flex items-center justify-between h-8">
         {gauntlet ? (
           <span className="text-green-400 font-mono text-sm">
-            Shortcut {currentQ + 1}/{total} | Category: {catInfo?.name}
+            Shortcut {currentQ + 1}/{total} | {catInfo?.name}
           </span>
         ) : (
           <>
-            <span className="text-green-400 font-mono text-sm">
-              {currentQ + 1} / {total}
-            </span>
-            <span className="text-zinc-400 font-mono text-sm">
-              {catInfo?.icon} {catInfo?.name}
-            </span>
+            <span className="text-green-400 font-mono text-sm">{currentQ + 1} / {total}</span>
+            <span className="text-zinc-400 font-mono text-sm">{catInfo?.icon} {catInfo?.name}</span>
           </>
         )}
-        <div className="flex items-center gap-2">
-          <span className="text-green-400 font-mono text-sm">
-            score: {score} | {totalTime}s
-          </span>
-          <button
-            type="button"
-            onClick={onQuit}
-            className="text-xs font-mono text-zinc-600 hover:text-rose-400 transition-colors ml-2"
-          >
-            ⬛ quit
-          </button>
-        </div>
+        <span className="text-green-400 font-mono text-sm">score: {score} | {totalTime}s</span>
       </div>
 
       {/* ── Progress bar ──────────────────────────────────── */}
@@ -289,16 +270,6 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
         <p className="text-white font-bold text-2xl text-center mb-1">{question.action}</p>
         <p className="text-zinc-500 text-sm text-center mb-4">in {catInfo?.name}</p>
 
-        {/* Timer bar */}
-        {feedback.type === null && (
-          <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full ${timerColor} rounded-full transition-all duration-100`}
-              style={{ width: `${timerPct}%` }}
-            />
-          </div>
-        )}
-
         {/* Hint notice */}
         {feedback.type === null && hintKeys.length > 0 && (
           <p className="text-amber-400 text-xs font-mono mt-2">
@@ -312,9 +283,6 @@ export default function SprintMode({ software, difficulty, os, showKeyboard, onQ
             <p className={`font-mono text-lg ${feedback.type === 'correct' ? 'text-green-400' : 'text-rose-400'}`}>
               {feedback.msg}
             </p>
-            {feedback.bonus && (
-              <p className="text-xs text-yellow-400 font-mono">+50 speed bonus!</p>
-            )}
             <div className="flex items-center gap-1 flex-wrap">
               {correctKeys.map((k, i) => (
                 <span key={i} className="inline-flex items-center gap-1">

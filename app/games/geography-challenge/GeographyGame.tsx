@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Globe, Maximize2, Minimize2, Volume2, VolumeX } from 'lucide-react'
+import { Globe, Maximize2, Minimize2, Volume2, VolumeX, X } from 'lucide-react'
 import type { GameMode, Difficulty, QuizQuestion, Country } from '@/types/geography'
-import { COUNTRIES } from '@/data/geography'
 import { generateQuestions, getDailyQuestions, getOptionDisplay } from '@/lib/geographyUtils'
 
 // ── Local types ───────────────────────────────────────────────────────────────
@@ -52,15 +51,16 @@ const MODE_META: Record<GameMode, { emoji: string; name: string }> = {
 }
 
 const DIFF_CFG: Record<Difficulty, DiffConfig> = {
-  easy:   { label: 'Explorer',   icon: '🌱', desc: '30 well-known countries', selCls: 'bg-emerald-600 text-white border-emerald-500' },
-  medium: { label: 'Adventurer', icon: '🧭', desc: '120 countries worldwide',  selCls: 'bg-sky-600 text-white border-sky-500' },
-  hard:   { label: 'Expert',     icon: '🏔️', desc: 'All 195 countries',        selCls: 'bg-rose-600 text-white border-rose-500' },
+  easy:   { label: 'Explorer',   icon: '🌱', desc: '30 countries',  selCls: 'bg-emerald-600 text-white border-emerald-500' },
+  medium: { label: 'Adventurer', icon: '🧭', desc: '120 countries', selCls: 'bg-sky-600 text-white border-sky-500' },
+  hard:   { label: 'Expert',     icon: '🏔️', desc: 'All 195',       selCls: 'bg-rose-600 text-white border-rose-500' },
 }
 
 const COUNTS: QuestionCount[] = [5, 10, 15, 20]
 
-const ANSWER_TIME_SECONDS = 10
-const ADVANCE_DELAY_MS    = 1500
+const ANSWER_TIME_SECONDS = 13
+const ADVANCE_DELAY_MS    = 2000
+const POINTS_PER_CORRECT  = 5
 
 const GRADE_CANVAS_COLOR: Record<string, string> = {
   S: '#facc15', A: '#34d399', B: '#38bdf8', C: '#fb923c', D: '#71717a',
@@ -105,11 +105,12 @@ function bestKey(m: GameMode, d: Difficulty): string {
   return m === 'daily' ? 'geo_best_daily' : `geo_best_${m}_${d}`
 }
 
-function getGrade(s: number): GradeInfo {
-  if (s >= 900) return { letter: 'S', bg: 'bg-yellow-400',  fg: 'text-yellow-900',  text: 'Outstanding!' }
-  if (s >= 700) return { letter: 'A', bg: 'bg-emerald-400', fg: 'text-emerald-900', text: 'Great work!' }
-  if (s >= 500) return { letter: 'B', bg: 'bg-sky-400',     fg: 'text-sky-900',     text: 'Good effort!' }
-  if (s >= 300) return { letter: 'C', bg: 'bg-orange-400',  fg: 'text-orange-900',  text: 'Keep at it!' }
+function getGrade(score: number, maxScore: number): GradeInfo {
+  const pct = maxScore > 0 ? score / maxScore : 0
+  if (pct >= 1.0) return { letter: 'S', bg: 'bg-yellow-400',  fg: 'text-yellow-900',  text: 'Outstanding!' }
+  if (pct >= 0.8) return { letter: 'A', bg: 'bg-emerald-400', fg: 'text-emerald-900', text: 'Great work!' }
+  if (pct >= 0.6) return { letter: 'B', bg: 'bg-sky-400',     fg: 'text-sky-900',     text: 'Good effort!' }
+  if (pct >= 0.4) return { letter: 'C', bg: 'bg-orange-400',  fg: 'text-orange-900',  text: 'Keep at it!' }
   return               { letter: 'D', bg: 'bg-zinc-500',    fg: 'text-zinc-100',    text: 'Keep learning!' }
 }
 
@@ -135,7 +136,6 @@ export default function GeographyGame() {
   const [answered,     setAnswered]     = useState(false)
   const [score,        setScore]        = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
-  const [mapFeedback,  setMapFeedback]  = useState<string | null>(null)
   const [timeLeft,     setTimeLeft]     = useState(0)
 
   // Results metadata
@@ -148,8 +148,8 @@ export default function GeographyGame() {
   // UI
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [muted,        setMuted]        = useState(false)
-  const containerRef   = useRef<HTMLDivElement>(null)
-  const questionStart  = useRef(0)
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const questionStart = useRef(0)
 
   // Stat tracking refs
   const gameStartRef   = useRef(0)
@@ -193,8 +193,24 @@ export default function GeographyGame() {
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
 
-  // ── Question timer — single source of truth ──────────────────────────────
-  // Deps intentionally omit handlers (use refs internally to avoid stale closures)
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [])
+
+  // ── Preload next flag ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (stage !== 'playing') return
+    const next = questions[currentIdx + 1]
+    if (!next) return
+    const img = new window.Image()
+    img.src = `https://flagcdn.com/w320/${next.country.code.toLowerCase()}.png`
+  }, [currentIdx, questions, stage])
+
+  // ── Question timer ────────────────────────────────────────────────────────
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (stage !== 'playing') return
@@ -220,6 +236,7 @@ export default function GeographyGame() {
     if (stage !== 'results') return
 
     const timeSeconds = Math.round((Date.now() - gameStartRef.current) / 1000)
+    const maxScore    = questions.length * POINTS_PER_CORRECT
 
     // Personal best
     const key  = bestKey(mode, difficulty)
@@ -245,7 +262,7 @@ export default function GeographyGame() {
         lastDate === today        ? parseInt(localStorage.getItem('geo_streak') ?? '1', 10)     :
         1
 
-      localStorage.setItem('geo_streak',    String(newStreak))
+      localStorage.setItem('geo_streak',     String(newStreak))
       localStorage.setItem('geo_daily_date', today)
       localStorage.setItem(`geo_daily_${today}`, JSON.stringify({
         score, correct: correctCount, total: questions.length, completed: true,
@@ -271,7 +288,7 @@ export default function GeographyGame() {
     localStorage.setItem('geo_history', JSON.stringify([entry, ...prevHistory].slice(0, 20)))
 
     // Confetti
-    const grade = getGrade(score)
+    const grade = getGrade(score, maxScore)
     if (['S', 'A', 'B'].includes(grade.letter)) {
       import('canvas-confetti').then(({ default: confetti }) => {
         confetti({ particleCount: grade.letter === 'S' ? 200 : 120, spread: 70, origin: { y: 0.6 } })
@@ -318,7 +335,6 @@ export default function GeographyGame() {
         setCurrentIdx(next)
         setSelected(null)
         setAnswered(false)
-        setMapFeedback(null)
         questionStart.current = Date.now()
       }
     }, ADVANCE_DELAY_MS)
@@ -327,8 +343,6 @@ export default function GeographyGame() {
   function handleTimeout() {
     if (answeredRef.current) return
     answeredRef.current = true
-    const q = questionsRef.current[currentIdxRef.current]
-    if (q?.mode === 'map') setMapFeedback('Time up! ⏱️')
     setAnswered(true)
     advanceQuestion()
   }
@@ -358,7 +372,6 @@ export default function GeographyGame() {
     setCorrectCount(0)
     setSelected(null)
     setAnswered(false)
-    setMapFeedback(null)
     setPrevBest(null)
     setIsNewBest(false)
     setResultStreak(0)
@@ -372,12 +385,14 @@ export default function GeographyGame() {
     answeredRef.current = true
     const q       = questions[currentIdx]
     const correct = display === q.correctAnswer
-    const elapsed = (Date.now() - questionStart.current) / 1000
-    const pts     = correct ? (elapsed <= 3 ? 150 : 100) : 0
+    const pts     = correct ? POINTS_PER_CORRECT : 0
 
     if (correct) {
       playBeep(440, 150)
-      if (q.mode === 'flags' && elapsed < fastestFlagRef.current) fastestFlagRef.current = elapsed
+      if (q.mode === 'flags') {
+        const elapsed = (Date.now() - questionStart.current) / 1000
+        if (elapsed < fastestFlagRef.current) fastestFlagRef.current = elapsed
+      }
       if (q.mode === 'population') {
         popStreakRef.current.current++
         if (popStreakRef.current.current > popStreakRef.current.best)
@@ -400,22 +415,29 @@ export default function GeographyGame() {
     answeredRef.current = true
     const q       = questions[currentIdx]
     const correct = continent === q.correctAnswer
-    const elapsed = (Date.now() - questionStart.current) / 1000
-    const pts     = correct ? (elapsed <= 3 ? 150 : 100) : 0
+    const pts     = correct ? POINTS_PER_CORRECT : 0
 
-    if (correct) {
-      playBeep(440, 150)
-      setMapFeedback('Correct! 🎯')
-    } else {
-      playBeep(220, 150)
-      setMapFeedback(`It's in ${q.country.continent}!`)
-    }
+    if (correct) { playBeep(440, 150) } else { playBeep(220, 150) }
 
     setScore(s => s + pts)
     if (correct) setCorrectCount(c => c + 1)
     setSelected(continent)
     setAnswered(true)
     advanceQuestion()
+  }
+
+  function handleQuit() {
+    answeredRef.current   = false
+    currentIdxRef.current = 0
+    questionsRef.current  = []
+    setStage('setup')
+    setQuestions([])
+    setCurrentIdx(0)
+    setScore(0)
+    setAnswered(false)
+    setSelected(null)
+    setTimeLeft(0)
+    setCorrectCount(0)
   }
 
   function handleRestart() {
@@ -427,7 +449,6 @@ export default function GeographyGame() {
     setCurrentIdx(0)
     setSelected(null)
     setAnswered(false)
-    setMapFeedback(null)
     setTimeLeft(0)
   }
 
@@ -446,7 +467,6 @@ export default function GeographyGame() {
     setCorrectCount(0)
     setSelected(null)
     setAnswered(false)
-    setMapFeedback(null)
     setTimeLeft(0)
     setPrevBest(null)
     setIsNewBest(false)
@@ -457,13 +477,14 @@ export default function GeographyGame() {
   }
 
   function handleShare() {
-    const canvas = document.createElement('canvas')
-    canvas.width  = 600
-    canvas.height = 300
-    const ctx   = canvas.getContext('2d')!
-    const grade = getGrade(score)
-    const meta  = MODE_META[mode]
-    const pct   = Math.round((correctCount / (questions.length || 1)) * 100)
+    const canvas   = document.createElement('canvas')
+    canvas.width   = 600
+    canvas.height  = 300
+    const ctx      = canvas.getContext('2d')!
+    const maxScore = questions.length * POINTS_PER_CORRECT
+    const grade    = getGrade(score, maxScore)
+    const meta     = MODE_META[mode]
+    const pct      = Math.round((correctCount / (questions.length || 1)) * 100)
 
     const grad = ctx.createLinearGradient(0, 0, 600, 300)
     grad.addColorStop(0, '#0f172a')
@@ -493,7 +514,7 @@ export default function GeographyGame() {
 
     ctx.fillStyle = '#475569'
     ctx.font = '22px sans-serif'
-    ctx.fillText('/1000', 34 + scoreW, 196)
+    ctx.fillText(`/${maxScore}`, 34 + scoreW, 196)
 
     ctx.textBaseline = 'top'
     ctx.font = '14px sans-serif'
@@ -527,15 +548,35 @@ export default function GeographyGame() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-background px-3 py-3 sm:px-6 sm:py-4">
-      <div
-        ref={containerRef}
-        id="original-game-card"
-        className="relative w-full rounded-2xl bg-slate-800 p-4 dark:bg-slate-900"
-        style={{ boxShadow: '0 0 0 1px rgba(20,184,166,0.4), 0 25px 50px rgba(0,0,0,0.5)' }}
-      >
-        {/* Header controls */}
-        <div className="absolute right-3 top-3 flex items-center gap-1">
+    <div
+      ref={containerRef}
+      id="original-game-card"
+      className="relative flex w-full flex-col overflow-hidden rounded-2xl bg-slate-800 dark:bg-slate-900"
+      style={{
+        height: 'calc(100vh - 100px)',
+        minHeight: '560px',
+        boxShadow: '0 0 0 1px rgba(20,184,166,0.4), 0 25px 50px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* ── Header ── */}
+      <div className="flex shrink-0 items-center justify-between border-b border-teal-800/50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Globe className="h-5 w-5 text-teal-400" />
+          <h1 className="text-xl font-bold text-white">Geography Challenge</h1>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {stage === 'playing' && (
+            <>
+              <TimerBadge timeLeft={timeLeft} />
+              <button
+                onClick={handleQuit}
+                aria-label="Quit"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/50 transition-colors hover:border-red-400/30 hover:text-red-400"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </>
+          )}
           <button
             onClick={() => setMuted(m => !m)}
             aria-label={muted ? 'Unmute sounds' : 'Mute sounds'}
@@ -551,13 +592,11 @@ export default function GeographyGame() {
             {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </button>
         </div>
+      </div>
 
-        <div className="mb-4 flex items-center justify-center gap-2 border-b border-teal-800 pb-3">
-          <Globe className="h-5 w-5 text-teal-400" />
-          <h1 className="text-2xl font-bold text-white">Geography Challenge</h1>
-        </div>
-
-        {stage === 'setup' && (
+      {/* ── Setup ── */}
+      {stage === 'setup' && (
+        <div className="flex flex-1 flex-col justify-center overflow-y-auto p-4">
           <SetupScreen
             mode={mode}
             difficulty={difficulty}
@@ -571,9 +610,12 @@ export default function GeographyGame() {
             onCount={setQCount}
             onStart={handleStart}
           />
-        )}
+        </div>
+      )}
 
-        {stage === 'playing' && questions.length > 0 && (
+      {/* ── Playing ── */}
+      {stage === 'playing' && questions.length > 0 && (
+        <div className="flex-1 overflow-y-auto p-4">
           <PlayingScreen
             question={questions[currentIdx]}
             currentIdx={currentIdx}
@@ -582,15 +624,15 @@ export default function GeographyGame() {
             selected={selected}
             answered={answered}
             selectedMode={mode}
-            mapFeedback={mapFeedback}
-            timeLeft={timeLeft}
-            maxTime={ANSWER_TIME_SECONDS}
             onAnswer={handleAnswer}
             onMapAnswer={handleMapAnswer}
           />
-        )}
+        </div>
+      )}
 
-        {stage === 'results' && (
+      {/* ── Results ── */}
+      {stage === 'results' && (
+        <div className="flex-1 overflow-y-auto p-4">
           <ResultsScreen
             score={score}
             correct={correctCount}
@@ -607,8 +649,23 @@ export default function GeographyGame() {
             onPlayAgain={handlePlayAgain}
             onShare={handleShare}
           />
-        )}
-      </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Timer Badge ───────────────────────────────────────────────────────────────
+
+function TimerBadge({ timeLeft }: { timeLeft: number }) {
+  const cls = timeLeft <= 3
+    ? 'border-rose-700 bg-rose-900/30 text-rose-400 animate-pulse'
+    : timeLeft <= 7
+    ? 'border-yellow-700 bg-yellow-900/30 text-yellow-300'
+    : 'border-teal-700 bg-teal-900/30 text-teal-300'
+  return (
+    <div className={`flex h-10 w-10 items-center justify-center rounded-xl border font-mono text-xl font-bold ${cls}`}>
+      {timeLeft}
     </div>
   )
 }
@@ -636,45 +693,43 @@ function SetupScreen({
   const regularModes = MODES.filter(m => !m.fullWidth)
   const dailyMode    = MODES.find(m => m.fullWidth)!
 
-  const SL     = 'mb-4 text-center text-sm font-semibold uppercase tracking-widest text-teal-300'
-  const CB     = 'w-full rounded-xl p-4 text-left transition-all'
+  const SL     = 'mb-2 text-xs font-semibold uppercase tracking-widest text-teal-300'
+  const CB     = 'w-full rounded-xl p-2 text-left transition-all'
   const CSEL   = 'border-2 border-teal-400 bg-teal-900 shadow-lg shadow-teal-500/20'
   const CUNSEL = 'border border-slate-600 bg-slate-700 hover:border-teal-500'
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
 
       {streak > 0 && (
-        <p className="text-center text-sm text-amber-400">🔥 {streak} day streak</p>
+        <p className="text-center text-xs text-amber-400">🔥 {streak} day streak</p>
       )}
 
       <section>
         <p className={SL}>Choose Mode</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {regularModes.map(m => (
             <button key={m.id} type="button" onClick={() => onMode(m.id)}
               className={[CB, mode === m.id ? CSEL : CUNSEL].join(' ')}>
-              <span className="mb-2 block text-2xl">{m.emoji}</span>
-              <p className="font-semibold text-white">{m.name}</p>
-              <p className="text-xs text-slate-400">{m.desc}</p>
+              <span className="block text-2xl">{m.emoji}</span>
+              <p className="text-sm font-semibold text-white">{m.name}</p>
               {bests[m.id] !== undefined && bests[m.id]! > 0 && (
-                <p className="mt-1.5 text-xs text-teal-400">Best: {bests[m.id]} pts</p>
+                <p className="text-xs text-teal-400">Best: {bests[m.id]} pts</p>
               )}
             </button>
           ))}
         </div>
 
-        <div className="mt-3">
+        <div className="mt-2">
           <button type="button" onClick={() => onMode(dailyMode.id)}
             className={[CB, mode === dailyMode.id ? CSEL : CUNSEL].join(' ')}>
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-2xl">{dailyMode.emoji}</span>
               <div className="flex-1">
-                <p className="font-semibold text-white">{dailyMode.name}</p>
-                <p className="text-xs text-slate-400 mb-1">{dailyMode.desc}</p>
+                <p className="text-sm font-semibold text-white">{dailyMode.name}</p>
                 <p className="text-xs text-slate-500">Today: {formatToday()}</p>
                 {dailyDone ? (
-                  <div className="mt-2 space-y-0.5">
+                  <div className="space-y-0.5">
                     <p className="text-xs text-teal-400">✓ Completed today!</p>
                     {countdown && (
                       <p className="text-xs text-slate-400">
@@ -686,7 +741,7 @@ function SetupScreen({
                     )}
                   </div>
                 ) : bests[dailyMode.id] !== undefined && bests[dailyMode.id]! > 0 ? (
-                  <p className="mt-1.5 text-xs text-teal-400">Best: {bests[dailyMode.id]} pts</p>
+                  <p className="text-xs text-teal-400">Best: {bests[dailyMode.id]} pts</p>
                 ) : null}
               </div>
             </div>
@@ -696,20 +751,20 @@ function SetupScreen({
 
       {mode !== 'daily' && (
         <section>
-          <p className={SL}>Choose Difficulty</p>
-          <div className="grid grid-cols-3 gap-3">
+          <p className={SL}>Difficulty</p>
+          <div className="grid grid-cols-3 gap-2">
             {(Object.keys(DIFF_CFG) as Difficulty[]).map(key => {
               const cfg = DIFF_CFG[key]
               const sel = difficulty === key
               return (
                 <button key={key} type="button" onClick={() => onDiff(key)}
                   className={[
-                    'flex flex-col items-center rounded-xl border p-3 text-center transition-all',
+                    'flex flex-col items-center rounded-xl border px-3 py-1.5 text-center transition-all',
                     sel ? `${cfg.selCls} shadow-lg` : 'border-slate-600 bg-slate-700 text-slate-300 hover:border-slate-500',
                   ].join(' ')}>
-                  <span className="mb-1 text-xl">{cfg.icon}</span>
-                  <span className="text-sm font-semibold leading-tight">{cfg.label}</span>
-                  <span className={`mt-0.5 text-xs ${sel ? 'text-white/75' : 'text-slate-400'}`}>{cfg.desc}</span>
+                  <span className="mb-0.5 text-lg">{cfg.icon}</span>
+                  <span className="text-xs font-semibold leading-tight">{cfg.label}</span>
+                  <span className={`mt-0.5 text-[10px] ${sel ? 'text-white/75' : 'text-slate-400'}`}>{cfg.desc}</span>
                 </button>
               )
             })}
@@ -724,7 +779,7 @@ function SetupScreen({
             {COUNTS.map(n => (
               <button key={n} type="button" onClick={() => onCount(n)}
                 className={[
-                  'rounded-full px-5 py-1.5 text-sm font-medium transition-colors',
+                  'rounded-full px-2 py-1 text-xs font-medium transition-colors',
                   qCount === n ? 'bg-teal-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-200',
                 ].join(' ')}>
                 {n}
@@ -734,43 +789,12 @@ function SetupScreen({
         </section>
       )}
 
-      <div>
-        <button type="button" onClick={onStart}
-          disabled={mode === 'daily' && dailyDone}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 py-4 text-lg font-bold text-white shadow-lg shadow-teal-500/25 transition-all hover:from-teal-500 hover:to-cyan-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
-          ▶ Start Challenge
-        </button>
-      </div>
+      <button type="button" onClick={onStart}
+        disabled={mode === 'daily' && dailyDone}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 py-2 text-sm font-bold text-white shadow-lg shadow-teal-500/25 transition-all hover:from-teal-500 hover:to-cyan-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
+        ▶ Start Challenge
+      </button>
 
-    </div>
-  )
-}
-
-// ── Timer Bar ─────────────────────────────────────────────────────────────────
-
-function TimerBar({ timeLeft, maxTime, questionKey }: { timeLeft: number; maxTime: number; questionKey: number }) {
-  const [animated, setAnimated] = useState(false)
-
-  // Reset animation whenever the question changes — snap bar to full,
-  // then re-enable the smooth drain after 50 ms.
-  useEffect(() => {
-    setAnimated(false)
-    const t = setTimeout(() => setAnimated(true), 50)
-    return () => clearTimeout(t)
-  }, [questionKey])
-
-  const pct      = maxTime > 0 ? (timeLeft / maxTime) * 100 : 0
-  const barColor = timeLeft > 6 ? 'bg-green-500' : timeLeft > 3 ? 'bg-yellow-500' : 'bg-rose-500'
-
-  return (
-    <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
-      <div
-        className={`h-full rounded-full ${barColor}`}
-        style={{
-          width: `${pct}%`,
-          transition: animated ? 'width 1s linear' : 'none',
-        }}
-      />
     </div>
   )
 }
@@ -785,16 +809,13 @@ interface PlayingProps {
   selected:     string | null
   answered:     boolean
   selectedMode: GameMode
-  mapFeedback:  string | null
-  timeLeft:     number
-  maxTime:      number
   onAnswer:     (display: string) => void
   onMapAnswer:  (continent: string) => void
 }
 
 function PlayingScreen({
   question, currentIdx, total, score, selected, answered, selectedMode,
-  mapFeedback, timeLeft, maxTime, onAnswer, onMapAnswer,
+  onAnswer, onMapAnswer,
 }: PlayingProps) {
   const qMode = question.mode
   const meta  = MODE_META[selectedMode]
@@ -815,30 +836,22 @@ function PlayingScreen({
         <span className="text-teal-300">Score: {score}</span>
       </div>
 
-      {/* Question progress bar */}
-      <div className="mb-2 h-1 w-full overflow-hidden rounded-full bg-slate-700">
+      {/* Progress bar */}
+      <div className="mb-4 h-1 w-full overflow-hidden rounded-full bg-slate-700">
         <div
           className="h-full rounded-full bg-teal-500 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
 
-      {/* Timer bar — questionKey triggers snap-to-full reset without remounting */}
-      <TimerBar timeLeft={timeLeft} maxTime={maxTime} questionKey={currentIdx} />
-
-      {/* Question content — composite key ensures uniqueness across play-again sessions */}
+      {/* Question content — key ensures remount (and FlagImage state reset) on question change */}
       <div key={`question-${currentIdx}-${question.country.code}`} className="geo-question-enter">
 
         {/* Flag Master */}
         {qMode === 'flags' && (
           <>
             <div className="mb-6 rounded-xl bg-slate-700/50 p-6 text-center">
-              <img
-                src={`https://flagcdn.com/w160/${question.country.code.toLowerCase()}.png`}
-                alt={`Flag of ${question.country.name}`}
-                className="mx-auto mb-4 rounded-md border border-slate-600 shadow-lg"
-                style={{ width: 192, maxHeight: 120, objectFit: 'contain' }}
-              />
+              <FlagImage code={question.country.code} name={question.country.name} />
               <p className="text-lg text-white">{question.questionText}</p>
             </div>
             <AnswerGrid
@@ -849,7 +862,12 @@ function PlayingScreen({
               answered={answered}
               onAnswer={onAnswer}
             />
-            {answered && <FunFact text={question.country.funFact} />}
+            <FeedbackBlock
+              answered={answered}
+              selected={selected}
+              correctAnswer={question.correctAnswer}
+              funFact={question.country.funFact}
+            />
           </>
         )}
 
@@ -868,7 +886,12 @@ function PlayingScreen({
               answered={answered}
               onAnswer={onAnswer}
             />
-            {answered && <FunFact text={question.country.funFact} />}
+            <FeedbackBlock
+              answered={answered}
+              selected={selected}
+              correctAnswer={question.correctAnswer}
+              funFact={question.country.funFact}
+            />
           </>
         )}
 
@@ -883,7 +906,12 @@ function PlayingScreen({
               answered={answered}
               onAnswer={onAnswer}
             />
-            {answered && <FunFact text={question.country.funFact} />}
+            <FeedbackBlock
+              answered={answered}
+              selected={selected}
+              correctAnswer={question.correctAnswer}
+              funFact={question.country.funFact}
+            />
           </>
         )}
 
@@ -893,12 +921,30 @@ function PlayingScreen({
             question={question}
             answered={answered}
             selected={selected}
-            feedback={mapFeedback}
             onAnswer={onMapAnswer}
           />
         )}
 
       </div>
+    </div>
+  )
+}
+
+// ── Flag Image (with skeleton + fade-in) ──────────────────────────────────────
+
+function FlagImage({ code, name }: { code: string; name: string }) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <div className="relative mx-auto mb-4" style={{ width: 192, height: 120 }}>
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse rounded-md bg-zinc-700/50" />
+      )}
+      <img
+        src={`https://flagcdn.com/w320/${code.toLowerCase()}.png`}
+        alt={`Flag of ${name}`}
+        onLoad={() => setLoaded(true)}
+        className={`h-full w-full rounded-md border border-slate-600 object-contain shadow-lg transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
     </div>
   )
 }
@@ -964,7 +1010,6 @@ function PopulationDuelCards({ options, correctAnswer, selected, answered, onAns
 
   return (
     <div>
-      {/* Stack on mobile, side-by-side on sm+ */}
       <div className="flex flex-col gap-4 sm:flex-row">
         {options.map(country => {
           const isCorrect  = country.name === correctAnswer
@@ -1019,7 +1064,7 @@ function PopulationDuelCards({ options, correctAnswer, selected, answered, onAns
   )
 }
 
-// ── Continent Select Screen (replaces Map Tap) ────────────────────────────────
+// ── Continent Select Screen ───────────────────────────────────────────────────
 
 const ALL_CONTINENTS = ['Africa', 'Antarctica', 'Asia', 'Europe', 'North America', 'Oceania', 'South America']
 
@@ -1027,11 +1072,10 @@ interface ContinentProps {
   question: QuizQuestion
   answered: boolean
   selected: string | null
-  feedback: string | null
   onAnswer: (continent: string) => void
 }
 
-function ContinentSelectScreen({ question, answered, selected, feedback, onAnswer }: ContinentProps) {
+function ContinentSelectScreen({ question, answered, selected, onAnswer }: ContinentProps) {
   return (
     <div>
       <p className="mb-3 text-center text-2xl font-bold text-white">{question.questionText}</p>
@@ -1066,9 +1110,6 @@ function ContinentSelectScreen({ question, answered, selected, feedback, onAnswe
           )
         })}
       </div>
-      {answered && feedback && (
-        <p className="mt-3 text-center text-sm font-semibold text-white">{feedback}</p>
-      )}
       {answered && (
         <div className="mt-2 flex items-center justify-center gap-2 text-sm text-slate-300">
           <img
@@ -1083,16 +1124,45 @@ function ContinentSelectScreen({ question, answered, selected, feedback, onAnswe
           </span>
         </div>
       )}
+      <FeedbackBlock
+        answered={answered}
+        selected={selected}
+        correctAnswer={question.correctAnswer}
+        funFact={question.country.funFact}
+      />
     </div>
   )
 }
 
-// ── Fun Fact ──────────────────────────────────────────────────────────────────
+// ── Feedback Block ────────────────────────────────────────────────────────────
 
-function FunFact({ text }: { text: string }) {
+function FeedbackBlock({
+  answered, selected, correctAnswer, funFact,
+}: {
+  answered:      boolean
+  selected:      string | null
+  correctAnswer: string
+  funFact:       string
+}) {
+  if (!answered) return null
+  const isTimeout = selected === null
+  const isCorrect = !isTimeout && selected === correctAnswer
   return (
-    <div className="mt-4 rounded-lg bg-slate-800 p-3 text-center">
-      <p className="text-sm text-slate-300">📍 {text}</p>
+    <div className="mt-4 space-y-1 rounded-lg bg-slate-800/80 p-3">
+      {isCorrect ? (
+        <p className="text-sm font-semibold text-green-400">✓ Correct!</p>
+      ) : isTimeout ? (
+        <>
+          <p className="text-sm font-semibold text-amber-400">⏱ Time&apos;s up!</p>
+          <p className="text-sm text-white">Correct answer: <span className="font-semibold">{correctAnswer}</span></p>
+        </>
+      ) : (
+        <>
+          <p className="text-sm font-semibold text-rose-400">✗ Incorrect</p>
+          <p className="text-sm text-white">Correct answer: <span className="font-semibold">{correctAnswer}</span></p>
+        </>
+      )}
+      <p className="text-sm text-zinc-300">📍 {funFact}</p>
     </div>
   )
 }
@@ -1121,9 +1191,10 @@ function ResultsScreen({
   resultStreak, fastestFlag, popBestStreak, dailyDone,
   onRestart, onPlayAgain, onShare,
 }: ResultsProps) {
-  const pct   = Math.round((correct / total) * 100)
-  const grade = getGrade(score)
-  const meta  = MODE_META[mode]
+  const pct      = Math.round((correct / total) * 100)
+  const maxScore = total * POINTS_PER_CORRECT
+  const grade    = getGrade(score, maxScore)
+  const meta     = MODE_META[mode]
 
   const [cd, setCd] = useState<{ h: number; m: number; s: number } | null>(
     mode === 'daily' ? getMidnightDiff() : null
@@ -1142,7 +1213,7 @@ function ResultsScreen({
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-7xl font-bold text-white tabular-nums leading-none">{score}</span>
-            <span className="text-xl text-slate-400">/1000</span>
+            <span className="text-xl text-slate-400">/{maxScore}</span>
           </div>
           <p className="mt-1 text-sm text-slate-400">{meta.emoji} {meta.name}</p>
           {mode !== 'daily' && (

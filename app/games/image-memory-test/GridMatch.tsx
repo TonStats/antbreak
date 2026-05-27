@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 import { getGridCards } from '@/data/memoryContent'
 import type { MemoryCard, Difficulty } from '@/types/memory'
 import Confetti from './Confetti'
 import { downloadShareBadge } from './shareUtils'
 
-const PEEK_SECS    = 3
+const PEEK_SECS    = 5
 const FLIP_BACK_MS = 1000
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
@@ -14,9 +15,21 @@ const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 const TOTAL_PAIRS: Record<Difficulty, number> = { easy: 8, medium: 12, hard: 15, expert: 18 }
 const GRID_COLS:   Record<Difficulty, string>  = {
   easy:   'grid-cols-4',
-  medium: 'grid-cols-4 sm:grid-cols-6',
+  medium: 'grid-cols-6',
   hard:   'grid-cols-6',
   expert: 'grid-cols-6',
+}
+const EMOJI_SIZE: Record<Difficulty, string> = {
+  easy:   'text-2xl',
+  medium: 'text-2xl',
+  hard:   'text-xl',
+  expert: 'text-lg',
+}
+const MIN_CARD: Record<Difficulty, string> = {
+  easy:   '60px',
+  medium: '50px',
+  hard:   '45px',
+  expert: '40px',
 }
 
 function efficiencyLabel(eff: number): { label: string; cls: string } {
@@ -24,6 +37,18 @@ function efficiencyLabel(eff: number): { label: string; cls: string } {
   if (eff >= 65) return { label: 'Great',          cls: 'text-teal-400'   }
   if (eff >= 50) return { label: 'Good',           cls: 'text-yellow-400' }
   return               { label: 'Keep Practising', cls: 'text-purple-300' }
+}
+
+function updateStreak() {
+  const today     = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]
+  const lastPlay  = localStorage.getItem('memory_last_play') ?? ''
+  if (lastPlay !== today) {
+    const streak    = Number(localStorage.getItem('memory_streak') ?? 0)
+    const newStreak = lastPlay === yesterday ? streak + 1 : 1
+    localStorage.setItem('memory_streak', String(newStreak))
+    localStorage.setItem('memory_last_play', today)
+  }
 }
 
 interface Props { difficulty: Difficulty; theme: string; onQuit: () => void }
@@ -48,6 +73,7 @@ export default function GridMatch({ difficulty, theme, onQuit }: Props) {
   const peekTimerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const totalPairs = TOTAL_PAIRS[difficulty]
+  const maxScore   = totalPairs * 5
 
   useEffect(() => {
     if (peekTimerRef.current) clearInterval(peekTimerRef.current)
@@ -119,11 +145,12 @@ export default function GridMatch({ difficulty, theme, onQuit }: Props) {
       setMatchedPairs(newMatched)
 
       if (newMatched === totalPairs) {
-        const score   = Math.max(totalPairs * 1000 - newFlips * 50, totalPairs * 100)
+        const score   = maxScore
         const key     = `memory_best_grid_${difficulty}`
         const best    = Number(localStorage.getItem(key) ?? 0)
         const newBest = score > best
         if (newBest) localStorage.setItem(key, String(score))
+        updateStreak()
         setFinalScore(score)
         setIsNewBest(newBest)
         setSavedBest(newBest ? score : best)
@@ -216,14 +243,15 @@ export default function GridMatch({ difficulty, theme, onQuit }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex gap-3 text-sm text-purple-200">
           <span>Pairs: <span className="font-semibold text-white">{matchedPairs}/{totalPairs}</span></span>
-          <span>Flips: <span className="font-semibold text-white">{flips}</span></span>
+          <span>Score: <span className="font-semibold text-pink-300">{matchedPairs * 5}/{maxScore}</span></span>
           <span>Eff: <span className="font-semibold text-pink-300">{efficiency}</span></span>
         </div>
         <button
           onClick={onQuit}
-          className="text-xs text-white/20 transition-colors hover:text-red-400"
+          title="Quit to menu"
+          className="bg-rose-950/40 border border-rose-700/60 text-rose-400 hover:bg-rose-900/60 hover:border-rose-500 hover:text-rose-300 rounded-lg p-2 w-9 h-9 flex items-center justify-center transition-all duration-150"
         >
-          ⬛ quit
+          <X size={18} />
         </button>
       </div>
 
@@ -235,21 +263,22 @@ export default function GridMatch({ difficulty, theme, onQuit }: Props) {
       )}
 
       {/* Card grid */}
-      <div className="flex flex-1 items-center justify-center overflow-auto">
-        <div className={`grid ${GRID_COLS[difficulty]} gap-2`}>
+      <div className="flex flex-1 items-center justify-center p-2">
+        <div className={`grid ${GRID_COLS[difficulty]} gap-1.5 w-full`}>
           {cards.map((card) => {
             const isRevealed = peekPhase || card.isFlipped || card.isMatched
             return (
               <div
                 key={card.id}
                 className="memory-card aspect-square cursor-pointer"
+                style={{ minWidth: MIN_CARD[difficulty], minHeight: MIN_CARD[difficulty] }}
                 onClick={() => handleCardFlip(card.id)}
               >
                 <div className={`memory-card-inner${isRevealed ? ' flipped' : ''}`}>
 
                   {/* Face-down */}
                   <div className="memory-card-face flex items-center justify-center border border-purple-600/30 bg-gradient-to-br from-indigo-800 to-purple-900 transition hover:border-purple-400/60 hover:shadow-md hover:shadow-purple-500/20">
-                    <span className="text-2xl text-purple-500/30">✦</span>
+                    <span className="text-purple-500/30">✦</span>
                   </div>
 
                   {/* Face-up */}
@@ -262,7 +291,7 @@ export default function GridMatch({ difficulty, theme, onQuit }: Props) {
                     ].join(' ')}
                   >
                     <div className="flex h-full w-full flex-col items-center justify-center">
-                      <span className="text-3xl">{card.emoji}</span>
+                      <span className={EMOJI_SIZE[difficulty]}>{card.emoji}</span>
                       {card.isMatched && (
                         <span className="text-xs text-green-400/70">✓</span>
                       )}

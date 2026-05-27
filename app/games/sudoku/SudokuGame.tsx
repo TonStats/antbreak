@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   CalendarDays, Eraser, Grid3x3, Lightbulb,
-  Maximize2, Minimize2, Pause, PencilLine, Play, Undo2,
+  Maximize2, Minimize2, PencilLine, Play, Undo2, X,
 } from 'lucide-react'
 import { generatePuzzle, getDailyPuzzle } from '@/lib/sudoku'
 import type { Difficulty } from '@/lib/sudoku'
@@ -164,25 +164,21 @@ function CountdownToMidnight() {
 // ── SetupScreen ───────────────────────────────────────────────────────────────
 
 interface SetupProps {
-  difficulty:       Difficulty
-  mode:             Mode
-  streak:           number
-  savedClassicGame: SavedGame | null
-  savedDailyGame:   SavedGame | null
-  dailyCompleted:   boolean
-  onDifficulty:     (d: Difficulty) => void
-  onMode:           (m: Mode) => void
-  onStart:          () => void
-  onResumeClassic:  () => void
-  onResumeDaily:    () => void
+  difficulty:     Difficulty
+  mode:           Mode
+  streak:         number
+  canResume:      boolean
+  dailyCompleted: boolean
+  onDifficulty:   (d: Difficulty) => void
+  onMode:         (m: Mode) => void
+  onAction:       () => void
 }
 
 function SetupScreen({
-  difficulty, mode, streak, savedClassicGame, savedDailyGame, dailyCompleted,
-  onDifficulty, onMode, onStart, onResumeClassic, onResumeDaily,
+  difficulty, mode, streak, canResume, dailyCompleted, onDifficulty, onMode, onAction,
 }: SetupProps) {
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       <div className="mb-3 flex items-center justify-center gap-2">
         <Grid3x3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
         <h1 className="text-2xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
@@ -259,33 +255,16 @@ function SetupScreen({
         </div>
       )}
 
+      <div className="flex-1" />
+
       <button
-        onClick={onStart}
+        onClick={onAction}
         disabled={mode === 'daily' && dailyCompleted}
-        className="mt-4 w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-base font-bold text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 py-3 text-base font-bold text-white shadow-lg shadow-amber-500/30 transition-all hover:from-amber-400 hover:to-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Play className="mr-2 inline h-4 w-4" />
-        Start Puzzle
+        {canResume ? 'Resume' : 'Start Puzzle'}
       </button>
-
-      {savedClassicGame && (
-        <button
-          onClick={onResumeClassic}
-          className="mt-2 w-full rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-amber-400"
-        >
-          Resume Classic — {DIFF_CFG[savedClassicGame.difficulty].label} · {formatTime(savedClassicGame.timer)} elapsed
-        </button>
-      )}
-
-      {savedDailyGame && (
-        <button
-          onClick={onResumeDaily}
-          className="mt-2 w-full rounded-xl bg-sky-500 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-sky-400"
-        >
-          Resume Today&apos;s Puzzle — Daily · {formatTime(savedDailyGame.timer)} elapsed
-        </button>
-      )}
-
     </div>
   )
 }
@@ -319,6 +298,7 @@ export default function SudokuGame() {
   const [isFullscreen,      setIsFullscreen]      = useState(false)
 
   // Refs
+  const cardRef     = useRef<HTMLDivElement>(null)
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
   const elapsedRef  = useRef(0)
   const confettiRef = useRef<(() => void) | null>(null)
@@ -348,7 +328,7 @@ export default function SudokuGame() {
     }
   }, [])
 
-  // ── Refresh saved-game state whenever setup screen is shown ──────────────
+  // ── Refresh saved-game state whenever setup screen is shown or mode changes
 
   useEffect(() => {
     if (stage !== 'setup') return
@@ -356,7 +336,29 @@ export default function SudokuGame() {
     setSavedClassicGame(classic)
     setSavedDailyGame(daily)
     if (dailyDone) setDailyCompleted(true)
-  }, [stage])
+  }, [stage, mode])
+
+  // ── Fullscreen change ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    function handleFSChange() {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFSChange)
+    return () => document.removeEventListener('fullscreenchange', handleFSChange)
+  }, [])
+
+  // ── Esc exits fullscreen ──────────────────────────────────────────────────
+
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen()
+      }
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [])
 
   // ── Timer ─────────────────────────────────────────────────────────────────
 
@@ -649,6 +651,25 @@ export default function SudokuGame() {
     setStage('playing')
   }
 
+  async function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      await cardRef.current?.requestFullscreen()
+    } else {
+      await document.exitFullscreen()
+    }
+  }
+
+  const canResume = mode === 'classic' ? savedClassicGame !== null : savedDailyGame !== null
+
+  function handleAction() {
+    if (canResume) {
+      const saved = mode === 'classic' ? savedClassicGame : savedDailyGame
+      if (saved) resumeGame(saved)
+    } else {
+      startGame()
+    }
+  }
+
   // ── Cell styling ──────────────────────────────────────────────────────────
 
   function getCellBg(r: number, c: number): string {
@@ -683,67 +704,71 @@ export default function SudokuGame() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const cardStyle: React.CSSProperties = isFullscreen ? undefined! : {
-    boxShadow:
-      '0 0 0 1px rgba(251,191,36,0.3), 0 25px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
-  }
+  const cardStyle: React.CSSProperties = isFullscreen
+    ? {}
+    : {
+        height:    'calc(100vh - 100px)',
+        minHeight: '580px',
+        boxShadow: '0 0 0 1px rgba(251,191,36,0.3), 0 25px 60px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.8)',
+      }
 
-  const cardClass = isFullscreen
-    ? 'fixed inset-0 z-50 overflow-auto bg-amber-50 p-6 dark:bg-zinc-800'
-    : 'relative w-full rounded-2xl border-2 border-amber-200 bg-amber-50/90 p-4 backdrop-blur-sm dark:border-zinc-600 dark:bg-zinc-800/90'
+  const cardClass = [
+    'relative flex w-full flex-col',
+    isFullscreen
+      ? 'overflow-auto bg-amber-50 p-6 dark:bg-zinc-800'
+      : 'rounded-2xl border-2 border-amber-200 bg-amber-50/90 p-4 backdrop-blur-sm dark:border-zinc-600 dark:bg-zinc-800/90',
+  ].join(' ')
 
   const ctrlBtn = 'flex flex-1 flex-col items-center gap-1 rounded-xl border border-gray-300 bg-white py-2 px-3 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
 
   return (
-    <div className="bg-background px-4 py-3">
-      <div id="original-game-card" className={cardClass} style={isFullscreen ? undefined : cardStyle}>
-
-        {/* Fullscreen toggle */}
-        {stage !== 'setup' && (
-          <button
-            onClick={() => setIsFullscreen(f => !f)}
-            className="absolute right-4 top-4 rounded-lg p-1.5 text-stone-500 transition-colors hover:text-stone-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          >
-            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-          </button>
-        )}
+    <div className="px-4 pb-3">
+      <div ref={cardRef} id="original-game-card" className={cardClass} style={cardStyle}>
 
         {/* ── Setup ── */}
         {stage === 'setup' && (
           <SetupScreen
             difficulty={difficulty} mode={mode} streak={streak}
-            savedClassicGame={savedClassicGame} savedDailyGame={savedDailyGame}
-            dailyCompleted={dailyCompleted}
+            canResume={canResume} dailyCompleted={dailyCompleted}
             onDifficulty={setDifficulty} onMode={setMode}
-            onStart={startGame}
-            onResumeClassic={() => savedClassicGame && resumeGame(savedClassicGame)}
-            onResumeDaily={() => savedDailyGame && resumeGame(savedDailyGame)}
+            onAction={handleAction}
           />
         )}
 
         {/* ── Playing ── */}
         {(stage === 'playing' || stage === 'complete') && puzzle.length > 0 && (
-          <div>
-            <div className="mb-2 flex items-center justify-center gap-2 pr-8">
-              <Grid3x3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              <h1 className="text-2xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
+          <div className="flex flex-1 flex-col">
+
+            {/* Title row */}
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Grid3x3 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h1 className="text-2xl font-bold text-stone-800 dark:text-amber-50">Sudoku</h1>
+              </div>
+              <div className="flex items-center gap-1">
+                {stage === 'playing' && (
+                  <button
+                    onClick={pauseAndGoToSetup}
+                    aria-label="Quit"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-300 bg-transparent text-stone-500 transition-colors hover:border-red-400 hover:text-red-500 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-red-400/50 dark:hover:text-red-400"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  onClick={toggleFullscreen}
+                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-stone-300 bg-transparent text-stone-500 transition-colors hover:text-stone-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200"
+                >
+                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-            <div className="mb-3 border-b border-amber-200 dark:border-zinc-600" />
+            <div className="mb-2 border-b border-amber-200 dark:border-zinc-600" />
 
             {/* Status bar */}
             <div className="mb-2 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-800">
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-semibold text-stone-700 dark:text-zinc-200">{formatTime(elapsed)}</span>
-                <button
-                  onClick={pauseAndGoToSetup}
-                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-white"
-                  aria-label="Pause"
-                >
-                  <Pause className="h-3 w-3" />
-                  Pause
-                </button>
-              </div>
+              <span className="font-mono text-xs font-semibold text-stone-700 dark:text-zinc-200">{formatTime(elapsed)}</span>
               <span className={`${DIFF_CFG[difficulty].badge} rounded-full px-2 py-0.5 text-xs font-semibold text-white`}>
                 {DIFF_CFG[difficulty].label}
               </span>
@@ -774,51 +799,53 @@ export default function SudokuGame() {
             )}
 
             {/* Board */}
-            <div className="mx-auto w-full max-w-[400px]">
-              <div className="grid grid-cols-9 overflow-hidden rounded-lg border-2 border-gray-800 bg-white dark:border-zinc-600 dark:bg-zinc-900">
-                {Array.from({ length: 9 }, (_, r) =>
-                  Array.from({ length: 9 }, (_, c) => {
-                    const val       = grid[r][c]
-                    const cNotes    = notes[r][c]
-                    const hasNotes  = cNotes.length > 0 && val === 0
-                    const isShaking = shakingCell === `${r}-${c}`
-                    const bg        = getCellBg(r, c)
-                    const text      = getCellText(r, c)
+            <div className="flex flex-1 items-center justify-center overflow-hidden">
+              <div className="mx-auto w-full max-w-[400px]">
+                <div className="grid grid-cols-9 overflow-hidden rounded-lg border-2 border-gray-800 bg-white dark:border-zinc-600 dark:bg-zinc-900">
+                  {Array.from({ length: 9 }, (_, r) =>
+                    Array.from({ length: 9 }, (_, c) => {
+                      const val       = grid[r][c]
+                      const cNotes    = notes[r][c]
+                      const hasNotes  = cNotes.length > 0 && val === 0
+                      const isShaking = shakingCell === `${r}-${c}`
+                      const bg        = getCellBg(r, c)
+                      const text      = getCellText(r, c)
 
-                    return (
-                      <div
-                        key={`${r}-${c}`}
-                        onClick={() => {
-                          if (stage !== 'playing') return
-                          setSelectedCell(prev => prev?.[0] === r && prev?.[1] === c ? null : [r, c])
-                        }}
-                        className={[
-                          'flex aspect-square cursor-pointer select-none items-center justify-center text-base transition-colors duration-75',
-                          bg,
-                          isShaking ? 'animate-[shake_0.4s_ease]' : '',
-                        ].join(' ')}
-                        style={{
-                          borderRight:  (c === 2 || c === 5) ? '2px solid var(--sudoku-box-border)'  : '1px solid var(--sudoku-cell-border)',
-                          borderBottom: (r === 2 || r === 5) ? '2px solid var(--sudoku-box-border)'  : '1px solid var(--sudoku-cell-border)',
-                          borderLeft:   'none',
-                          borderTop:    'none',
-                        }}
-                      >
-                        {hasNotes ? (
-                          <div className="grid h-full w-full grid-cols-3 grid-rows-3 p-px">
-                            {[1,2,3,4,5,6,7,8,9].map(n => (
-                              <div key={n} className="flex items-center justify-center text-[7px] leading-none text-gray-400 dark:text-zinc-500">
-                                {cNotes.includes(n) ? n : ''}
-                              </div>
-                            ))}
-                          </div>
-                        ) : val !== 0 ? (
-                          <span className={`text-lg leading-none ${text}`}>{val}</span>
-                        ) : null}
-                      </div>
-                    )
-                  })
-                ).flat()}
+                      return (
+                        <div
+                          key={`${r}-${c}`}
+                          onClick={() => {
+                            if (stage !== 'playing') return
+                            setSelectedCell(prev => prev?.[0] === r && prev?.[1] === c ? null : [r, c])
+                          }}
+                          className={[
+                            'flex aspect-square cursor-pointer select-none items-center justify-center text-base transition-colors duration-75',
+                            bg,
+                            isShaking ? 'animate-[shake_0.4s_ease]' : '',
+                          ].join(' ')}
+                          style={{
+                            borderRight:  (c === 2 || c === 5) ? '2px solid var(--sudoku-box-border)'  : '1px solid var(--sudoku-cell-border)',
+                            borderBottom: (r === 2 || r === 5) ? '2px solid var(--sudoku-box-border)'  : '1px solid var(--sudoku-cell-border)',
+                            borderLeft:   'none',
+                            borderTop:    'none',
+                          }}
+                        >
+                          {hasNotes ? (
+                            <div className="grid h-full w-full grid-cols-3 grid-rows-3 p-px">
+                              {[1,2,3,4,5,6,7,8,9].map(n => (
+                                <div key={n} className="flex items-center justify-center text-[7px] leading-none text-gray-400 dark:text-zinc-500">
+                                  {cNotes.includes(n) ? n : ''}
+                                </div>
+                              ))}
+                            </div>
+                          ) : val !== 0 ? (
+                            <span className={`text-lg leading-none ${text}`}>{val}</span>
+                          ) : null}
+                        </div>
+                      )
+                    })
+                  ).flat()}
+                </div>
               </div>
             </div>
 
@@ -874,17 +901,6 @@ export default function SudokuGame() {
               </button>
             </div>
 
-            {/* Back to menu */}
-            {stage === 'playing' && (
-              <div className="mt-2 text-center">
-                <button
-                  onClick={pauseAndGoToSetup}
-                  className="text-xs text-stone-400 underline hover:text-stone-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-                >
-                  ← Back to menu
-                </button>
-              </div>
-            )}
           </div>
         )}
 

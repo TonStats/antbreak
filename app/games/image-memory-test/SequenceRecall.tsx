@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { X } from 'lucide-react'
 import { getSequenceEmojis } from '@/data/memoryContent'
 import Confetti from './Confetti'
 import { downloadShareBadge } from './shareUtils'
@@ -31,6 +32,18 @@ function levelBadge(lv: number): { label: string; cls: string } {
   return               { label: 'Beginner',   cls: 'text-purple-300 border-purple-300/50 bg-purple-300/10' }
 }
 
+function updateStreak() {
+  const today     = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]
+  const lastPlay  = localStorage.getItem('memory_last_play') ?? ''
+  if (lastPlay !== today) {
+    const streak    = Number(localStorage.getItem('memory_streak') ?? 0)
+    const newStreak = lastPlay === yesterday ? streak + 1 : 1
+    localStorage.setItem('memory_streak', String(newStreak))
+    localStorage.setItem('memory_last_play', today)
+  }
+}
+
 interface Props { onQuit: () => void }
 
 export default function SequenceRecall({ onQuit }: Props) {
@@ -40,6 +53,7 @@ export default function SequenceRecall({ onQuit }: Props) {
   const [showPositions, setShowPositions] = useState<number[]>([])
   const [playerInput,   setPlayerInput]   = useState<string[]>([])
   const [activeIndex,   setActiveIndex]   = useState(-1)
+  const [lastTapped,    setLastTapped]    = useState(-1)
   const [level,         setLevel]         = useState(1)
   const [score,         setScore]         = useState(0)
   const [wrongPos,      setWrongPos]      = useState(-1)
@@ -49,6 +63,7 @@ export default function SequenceRecall({ onQuit }: Props) {
 
   const showingRef    = useRef(false)
   const processingRef = useRef(false)
+  const scoreRef      = useRef(0)
 
   const startLevel = useCallback(async (lv: number) => {
     if (showingRef.current) return
@@ -64,6 +79,7 @@ export default function SequenceRecall({ onQuit }: Props) {
     setSequence(seq)
     setShowPositions(positions)
     setPlayerInput([])
+    setLastTapped(-1)
     setWrongPos(-1)
     setActiveIndex(-1)
     setSeqMode('showing')
@@ -93,6 +109,8 @@ export default function SequenceRecall({ onQuit }: Props) {
     const idx      = newInput.length - 1
 
     setPlayerInput(newInput)
+    setLastTapped(pos)
+    setTimeout(() => setLastTapped(-1), 400)
 
     if (emoji !== sequence[idx]) {
       setWrongPos(pos)
@@ -103,6 +121,7 @@ export default function SequenceRecall({ onQuit }: Props) {
       const best     = Number(localStorage.getItem('memory_best_sequence') ?? 0)
       const newBest  = achieved > best
       if (newBest) localStorage.setItem('memory_best_sequence', String(achieved))
+      updateStreak()
       setIsNewBest(newBest)
       setSavedBest(newBest ? achieved : best)
       setGameOver(true)
@@ -110,8 +129,11 @@ export default function SequenceRecall({ onQuit }: Props) {
       return
     }
 
+    // Correct tap — award 5 points
+    scoreRef.current += 5
+    setScore(scoreRef.current)
+
     if (newInput.length === sequence.length) {
-      setScore((prev) => prev + level * 100)
       setSeqMode('feedback-correct')
       await delay(OK_MS)
       const next = level + 1
@@ -125,7 +147,8 @@ export default function SequenceRecall({ onQuit }: Props) {
 
   async function handleReplay() {
     if (seqMode !== 'input' || showingRef.current) return
-    setScore((prev) => Math.max(0, prev - 50))
+    scoreRef.current = Math.max(0, scoreRef.current - 50)
+    setScore(scoreRef.current)
     setPlayerInput([])
     await startLevel(level)
   }
@@ -135,6 +158,7 @@ export default function SequenceRecall({ onQuit }: Props) {
     setIsNewBest(false)
     setLevel(1)
     setScore(0)
+    scoreRef.current = 0
     startLevel(1)
   }
 
@@ -211,8 +235,6 @@ export default function SequenceRecall({ onQuit }: Props) {
   }
   const instr = instrMap[seqMode]
 
-  const tappedSet = new Set(playerInput.map((e) => gridEmojis.indexOf(e)))
-
   return (
     <div className="flex h-full flex-col gap-3">
 
@@ -223,12 +245,13 @@ export default function SequenceRecall({ onQuit }: Props) {
         </span>
         <span className="text-xs text-white/50">🧠 Sequence Recall</span>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-pink-300">{score} pts</span>
+          <span className="text-sm font-semibold text-pink-300">Score: {score} pts</span>
           <button
             onClick={onQuit}
-            className="ml-2 text-xs text-white/20 transition-colors hover:text-red-400"
+            title="Quit to menu"
+            className="bg-rose-950/40 border border-rose-700/60 text-rose-400 hover:bg-rose-900/60 hover:border-rose-500 hover:text-rose-300 rounded-lg p-2 w-9 h-9 flex items-center justify-center transition-all duration-150"
           >
-            ⬛ quit
+            <X size={18} />
           </button>
         </div>
       </div>
@@ -246,18 +269,18 @@ export default function SequenceRecall({ onQuit }: Props) {
             const isActive  = !isEmpty && activeIndex === pos && seqMode === 'showing'
             const isWrong   = !isEmpty && wrongPos === pos && seqMode === 'feedback-wrong'
             const isCorrect = !isEmpty && seqMode === 'feedback-correct'
-            const isTapped  = !isEmpty && tappedSet.has(pos) && seqMode === 'input'
+            const isLastTap = !isEmpty && lastTapped === pos && seqMode === 'input'
 
             const cls = isEmpty
               ? 'cursor-default border-white/5 bg-white/5 opacity-20'
               : isWrong
-              ? 'border-2 border-red-400 bg-red-500/40 [animation:shake_0.3s_ease-in-out]'
+              ? 'border-2 border-red-300 bg-red-500/50 shadow-lg shadow-red-500/40 [animation:shake_0.3s_ease-in-out]'
               : isCorrect
               ? 'border-2 border-green-400 bg-green-500/40'
               : isActive
               ? 'scale-110 border-2 border-purple-300 bg-purple-500/60 shadow-lg shadow-purple-500/50'
-              : isTapped
-              ? 'scale-105 border-2 border-pink-300 bg-pink-500/40'
+              : isLastTap
+              ? 'bg-green-500/50 border-2 border-green-300 shadow-lg shadow-green-500/40 scale-110 text-white'
               : 'border border-white/10 bg-white/5 hover:border-purple-400/50 hover:bg-purple-500/10 active:scale-95'
 
             return (
@@ -279,16 +302,21 @@ export default function SequenceRecall({ onQuit }: Props) {
         </div>
       </div>
 
-      {/* Progress dots + replay */}
+      {/* Progress circles + replay */}
       <div className="flex flex-col items-center gap-2 pb-1">
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap justify-center gap-1.5">
           {sequence.map((_, i) => (
             <div
               key={i}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                i < playerInput.length ? 'bg-purple-400' : 'bg-white/20'
-              }`}
-            />
+              className={[
+                'w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-all',
+                i < playerInput.length
+                  ? 'bg-green-500 text-white scale-110'
+                  : 'bg-white/10 text-white/30',
+              ].join(' ')}
+            >
+              {i < playerInput.length ? '✓' : i + 1}
+            </div>
           ))}
         </div>
 

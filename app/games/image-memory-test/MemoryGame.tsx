@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Brain, Maximize2 } from 'lucide-react'
+import { Brain, Maximize2, Minimize2 } from 'lucide-react'
 import type { MemoryMode, Difficulty } from '@/types/memory'
 import SequenceRecall from './SequenceRecall'
 import GridMatch from './GridMatch'
@@ -15,12 +15,13 @@ const CARD_STYLE: React.CSSProperties = {
 }
 
 const MODES: { key: MemoryMode; emoji: string; name: string; desc: string }[] = [
-  { key: 'sequence', emoji: '🧠', name: 'Sequence Recall',  desc: 'Watch the pattern. Repeat it back.'          },
-  { key: 'grid',     emoji: '🃏', name: 'Grid Match',       desc: 'Find all matching pairs from memory.'         },
-  { key: 'daily',    emoji: '⚡', name: 'Daily Flash',      desc: '5 images. Half a second. Can you recall?'    },
+  { key: 'sequence', emoji: '🧠', name: 'Sequence Recall', desc: 'Watch the pattern. Repeat it back.'                        },
+  { key: 'grid',     emoji: '🃏', name: 'Grid Match',      desc: 'Find all matching pairs from memory.'                      },
+  { key: 'daily',    emoji: '⚡', name: 'Flash Cards',     desc: '5 images flash on screen. Answer questions about what you saw.' },
 ]
 
 const THEMES = [
+  { key: 'all',     label: 'All',     icon: '🌟' },
   { key: 'animals', label: 'Animals', icon: '🐾' },
   { key: 'food',    label: 'Food',    icon: '🍕' },
   { key: 'sports',  label: 'Sports',  icon: '⚽' },
@@ -41,13 +42,26 @@ type GamePhase = 'setup' | 'playing'
 export default function MemoryGame() {
   const [phase,      setPhase]      = useState<GamePhase>('setup')
   const [mode,       setMode]       = useState<MemoryMode | null>(null)
-  const [theme,      setTheme]      = useState('animals')
+  const [theme,      setTheme]      = useState('all')
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
   const [streak,     setStreak]     = useState(0)
   const [bestSeq,    setBestSeq]    = useState(0)
   const [bestGrid,   setBestGrid]   = useState(0)
-  const [dailyDone,  setDailyDone]  = useState(false)
-  const [countdown,  setCountdown]  = useState('')
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  useEffect(() => {
+    const h = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', h)
+    return () => document.removeEventListener('fullscreenchange', h)
+  }, [])
+
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [])
 
   useEffect(() => {
     setStreak(Number(localStorage.getItem('memory_streak') ?? 0))
@@ -55,26 +69,7 @@ export default function MemoryGame() {
     const gridBests = ['easy','medium','hard','expert']
       .map((d) => Number(localStorage.getItem(`memory_best_grid_${d}`) ?? 0))
     setBestGrid(Math.max(...gridBests))
-    const todayISO = new Date().toISOString().split('T')[0]
-    setDailyDone(!!localStorage.getItem(`memory_daily_${todayISO}`))
   }, [])
-
-  useEffect(() => {
-    if (mode !== 'daily') return
-    function tick() {
-      const now  = new Date()
-      const next = new Date()
-      next.setHours(24, 0, 0, 0)
-      const diff = next.getTime() - now.getTime()
-      const h = Math.floor(diff / 3_600_000)
-      const m = Math.floor((diff % 3_600_000) / 60_000)
-      const s = Math.floor((diff % 60_000) / 1_000)
-      setCountdown(`${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`)
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [mode])
 
   function handleFullscreen() {
     const el = document.getElementById('original-game-card')
@@ -126,10 +121,10 @@ export default function MemoryGame() {
           </div>
           <button
             onClick={handleFullscreen}
-            aria-label="Fullscreen"
+            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             className="text-purple-400 hover:text-purple-300 transition-colors"
           >
-            <Maximize2 className="h-5 w-5" />
+            {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
           </button>
         </div>
 
@@ -155,21 +150,15 @@ export default function MemoryGame() {
                 <div className="text-4xl">{m.emoji}</div>
                 <p className="text-white font-bold text-lg mt-2">{m.name}</p>
                 <p className="text-purple-200/70 text-sm">{m.desc}</p>
-
-                {isDaily && dailyDone && (
-                  <span className="absolute top-3 right-3 text-xs font-semibold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 rounded-full px-2.5 py-0.5">
-                    ✓ Complete
-                  </span>
-                )}
               </div>
             )
           })}
         </div>
 
-        {/* ── Daily countdown ── */}
-        {mode === 'daily' && dailyDone && countdown && (
-          <p className="text-purple-300/60 text-xs text-center mb-4">
-            Next challenge in {countdown}
+        {/* ── Flash Cards blurb ── */}
+        {mode === 'daily' && (
+          <p className="text-purple-300/50 text-xs text-center mb-4">
+            Play as many times as you like
           </p>
         )}
 
@@ -235,7 +224,7 @@ export default function MemoryGame() {
         )}
         {(bestSeq > 0 || bestGrid > 0) && (
           <p className="text-purple-300/60 text-xs text-center mt-1">
-            Your best — Sequence: {bestSeq} | Grid: {bestGrid}%
+            Your best — Sequence: Lvl {bestSeq} | Grid: {bestGrid} pts
           </p>
         )}
 

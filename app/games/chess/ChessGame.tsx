@@ -185,7 +185,7 @@ export default function ChessGame() {
   const bumpBoard = () => setBoardVer(v => v + 1)
 
   const chess         = useRef(new Chess())
-  const containerRef  = useRef<HTMLDivElement>(null)
+  const cardRef       = useRef<HTMLDivElement>(null)
   const confettiRef   = useRef<(() => void) | null>(null)
   const aiTimer       = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clockRef      = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -207,6 +207,14 @@ export default function ChessGame() {
     const h = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', h)
     return () => document.removeEventListener('fullscreenchange', h)
+  }, [])
+
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
   }, [])
 
   useEffect(() => () => {
@@ -385,9 +393,12 @@ export default function ChessGame() {
     }
   }
 
-  function toggleFullscreen() {
-    if (isFullscreen) document.exitFullscreen().catch(() => {})
-    else (containerRef.current ?? document.documentElement).requestFullscreen().catch(() => {})
+  const toggleFullscreen = async () => {
+    if (!document.fullscreenElement) {
+      await cardRef.current?.requestFullscreen()
+    } else {
+      await document.exitFullscreen()
+    }
   }
 
   // ── Board helpers ──────────────────────────────────────────────────────────
@@ -426,25 +437,36 @@ export default function ChessGame() {
   // ── Board size (responsive + fullscreen) ───────────────────────────────────
 
   const boardSize = isFullscreen
-    ? 'min(calc(100vh - 200px), calc(100vw - 32px))'
+    ? 'min(calc(100vh - 220px), calc(100vw - 350px))'
     : 'min(calc(100vh - 300px), 520px)'
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="bg-background px-3 py-3 sm:px-6 sm:py-4">
-      <div
-        ref={containerRef}
-        id="original-game-card"
-        className="relative w-full rounded-2xl bg-slate-700 p-4 dark:bg-slate-800"
-        style={{ boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 25px 50px rgba(0,0,0,0.4)' }}
-      >
+    <div
+      ref={cardRef}
+      id="original-game-card"
+      className="chess-game-card relative w-full flex flex-col rounded-2xl bg-slate-700 p-4 dark:bg-slate-800"
+      style={{
+        boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 25px 50px rgba(0,0,0,0.4)',
+        height: isFullscreen ? '100vh' : 'calc(100vh - 100px)',
+        minHeight: isFullscreen ? '100vh' : '580px',
+        ...(isFullscreen && {
+          width: '100vw',
+          borderRadius: 0,
+          position: 'fixed' as const,
+          top: 0,
+          left: 0,
+          zIndex: 9999,
+        }),
+      }}
+    >
 
         {/* Title row — Crown + title left, icon buttons right */}
         <div className="mb-2 flex items-center justify-between border-b border-slate-500 pb-2">
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-violet-400" />
-            <h1 className="text-xl font-bold text-white">Chess</h1>
+            <h1 className={`font-bold text-white ${isFullscreen ? 'text-3xl' : 'text-xl'}`}>Chess</h1>
           </div>
           <div className="flex items-center gap-1">
             {stage === 'playing' && (
@@ -477,31 +499,34 @@ export default function ChessGame() {
 
         {/* ── SETUP ─────────────────────────────────────────────────────── */}
         {stage === 'setup' && (
-          <SetupScreen
-            difficulty={difficulty}
-            playerColor={playerColor}
-            timeControl={timeControl}
-            savedGame={savedGame}
-            onDiff={setDifficulty}
-            onColor={setPlayerColor}
-            onTimeControl={setTimeControl}
-            onStart={() => startGame(difficulty, playerColor, timeControl)}
-            onResume={() => savedGame && resumeGame(savedGame)}
-          />
+          <div className="flex flex-col justify-center flex-1 overflow-y-auto">
+            <SetupScreen
+              difficulty={difficulty}
+              playerColor={playerColor}
+              timeControl={timeControl}
+              savedGame={savedGame}
+              isFullscreen={isFullscreen}
+              onDiff={setDifficulty}
+              onColor={setPlayerColor}
+              onTimeControl={setTimeControl}
+              onStart={() => startGame(difficulty, playerColor, timeControl)}
+              onResume={() => savedGame && resumeGame(savedGame)}
+            />
+          </div>
         )}
 
         {/* ── PLAYING ───────────────────────────────────────────────────── */}
         {stage === 'playing' && (
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col flex-1 items-center justify-center">
 
             {/* Sized wrapper — same width as board */}
             <div style={{ width: boardSize, maxWidth: '100%' }}>
 
               {/* AI's side — player pieces the AI captured */}
-              <div className="mb-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1 dark:bg-slate-700/50">
+              <div className={`mb-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 dark:bg-slate-700/50 ${isFullscreen ? 'py-2' : 'py-1'}`}>
                 {aiCaptured.map((t, i) => (
-                  <div key={i} style={{ width: 18, height: 18 }}>
-                    <ChessPiece piece={`${playerColor}${t.toUpperCase()}`} size={18} />
+                  <div key={i} style={{ width: isFullscreen ? 26 : 18, height: isFullscreen ? 26 : 18 }}>
+                    <ChessPiece piece={`${playerColor}${t.toUpperCase()}`} size={isFullscreen ? 26 : 18} />
                   </div>
                 ))}
               </div>
@@ -584,16 +609,16 @@ export default function ChessGame() {
               </div>
 
               {/* Player's side — AI pieces the player captured */}
-              <div className="mt-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 py-1 dark:bg-slate-700/50">
+              <div className={`mt-1 flex min-h-[28px] flex-wrap gap-0.5 rounded-lg bg-slate-600/50 px-3 dark:bg-slate-700/50 ${isFullscreen ? 'py-2' : 'py-1'}`}>
                 {playerCaptured.map((t, i) => (
-                  <div key={i} style={{ width: 18, height: 18 }}>
-                    <ChessPiece piece={`${opponentColor}${t.toUpperCase()}`} size={18} />
+                  <div key={i} style={{ width: isFullscreen ? 26 : 18, height: isFullscreen ? 26 : 18 }}>
+                    <ChessPiece piece={`${opponentColor}${t.toUpperCase()}`} size={isFullscreen ? 26 : 18} />
                   </div>
                 ))}
               </div>
 
               {/* Status + clock row */}
-              <div className="mt-1 flex items-center justify-between rounded-lg bg-slate-600/50 px-3 py-2 text-sm dark:bg-slate-700/50">
+              <div className={`mt-1 flex items-center justify-between rounded-lg bg-slate-600/50 px-3 dark:bg-slate-700/50 ${isFullscreen ? 'py-3 text-base' : 'py-2 text-sm'}`}>
                 <div>
                   {isThinking ? (
                     <p className="font-bold text-amber-400">
@@ -609,14 +634,14 @@ export default function ChessGame() {
                 {timeControl !== 'unlimited' && (
                   <div
                     className={[
-                      'rounded-lg px-3 py-1 font-mono text-base font-semibold',
+                      `rounded-lg font-mono font-semibold ${isFullscreen ? 'px-5 py-2 text-2xl' : 'px-3 py-1 text-base'}`,
                       playerTime !== null && playerTime < 10
                         ? 'animate-pulse border border-rose-500 bg-slate-800 text-rose-400'
                         : playerTime === null
                           ? 'border border-slate-600 bg-slate-800 text-slate-400'
                           : 'border border-slate-600 bg-slate-800 text-white',
                     ].join(' ')}
-                    style={{ minWidth: 70, textAlign: 'center' }}
+                    style={{ minWidth: isFullscreen ? 90 : 70, textAlign: 'center' }}
                   >
                     {formatTime(playerTime)}
                   </div>
@@ -629,20 +654,21 @@ export default function ChessGame() {
 
         {/* ── GAME OVER ─────────────────────────────────────────────────── */}
         {stage === 'gameover' && gameResult && (
-          <GameOverScreen
-            result={gameResult}
-            difficulty={difficulty}
-            playerColor={playerColor}
-            onNewGame={() => {
-              confettiRef.current?.(); confettiRef.current = null
-              const raw = localStorage.getItem('chess_saved_game')
-              setSavedGame(raw ? JSON.parse(raw) : null)
-              setStage('setup')
-            }}
-            onPlaySame={() => startGame(difficulty, playerColor, timeControl)}
-          />
+          <div className="flex flex-col flex-1 items-center justify-center">
+            <GameOverScreen
+              result={gameResult}
+              difficulty={difficulty}
+              playerColor={playerColor}
+              onNewGame={() => {
+                confettiRef.current?.(); confettiRef.current = null
+                const raw = localStorage.getItem('chess_saved_game')
+                setSavedGame(raw ? JSON.parse(raw) : null)
+                setStage('setup')
+              }}
+              onPlaySame={() => startGame(difficulty, playerColor, timeControl)}
+            />
+          </div>
         )}
-      </div>
     </div>
   )
 }
@@ -650,23 +676,25 @@ export default function ChessGame() {
 // ── SetupScreen ───────────────────────────────────────────────────────────────
 
 function SetupScreen({
-  difficulty, playerColor, timeControl, savedGame,
+  difficulty, playerColor, timeControl, savedGame, isFullscreen,
   onDiff, onColor, onTimeControl, onStart, onResume,
 }: {
   difficulty:    Difficulty
   playerColor:   ChessColor
   timeControl:   TimeControl
   savedGame:     SavedGame | null
+  isFullscreen:  boolean
   onDiff:        (d: Difficulty) => void
   onColor:       (c: ChessColor) => void
   onTimeControl: (t: TimeControl) => void
   onStart:       () => void
   onResume:      () => void
 }) {
+  const fs = isFullscreen
   return (
-    <div className="mx-auto max-w-md overflow-y-auto">
+    <div className={`mx-auto overflow-y-auto ${fs ? 'max-w-2xl w-full' : 'max-w-md'}`}>
 
-      <p className="mb-1 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
+      <p className={`mb-1 border-l-4 border-violet-500 pl-3 font-semibold uppercase tracking-widest text-slate-200 ${fs ? 'text-sm' : 'text-xs'}`}>
         Choose Difficulty
       </p>
       <div className="mb-3 grid grid-cols-3 gap-2">
@@ -677,21 +705,21 @@ function SetupScreen({
               key={d}
               onClick={() => onDiff(d)}
               className={[
-                'flex flex-col items-center gap-0.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                `flex flex-col items-center gap-0.5 rounded-xl border font-medium transition-all ${fs ? 'px-6 py-3 text-base' : 'px-3 py-1.5 text-xs'}`,
                 difficulty === d
                   ? cfg.sel
                   : 'border-zinc-600 bg-zinc-800 text-zinc-300 hover:bg-zinc-700',
               ].join(' ')}
             >
-              <span className="text-base">{cfg.emoji}</span>
+              <span className={fs ? 'text-2xl' : 'text-base'}>{cfg.emoji}</span>
               <span>{cfg.label}</span>
-              <span className="text-[10px] opacity-70">{cfg.desc}</span>
+              <span className={`opacity-70 ${fs ? 'text-sm' : 'text-[10px]'}`}>{cfg.desc}</span>
             </button>
           )
         })}
       </div>
 
-      <p className="mb-1 mt-3 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
+      <p className={`mb-1 mt-3 border-l-4 border-violet-500 pl-3 font-semibold uppercase tracking-widest text-slate-200 ${fs ? 'text-sm' : 'text-xs'}`}>
         Choose Side
       </p>
       <div className="mb-3 grid grid-cols-2 gap-2">
@@ -700,7 +728,7 @@ function SetupScreen({
             key={c}
             onClick={() => onColor(c)}
             className={[
-              'flex items-center justify-center gap-3 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-all',
+              `flex items-center justify-center gap-3 rounded-xl border-2 font-bold transition-all ${fs ? 'px-6 py-4 text-base' : 'px-4 py-2 text-sm'}`,
               playerColor === c
                 ? c === 'w'
                   ? 'border-violet-500 bg-white text-zinc-900'
@@ -708,13 +736,13 @@ function SetupScreen({
                 : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700',
             ].join(' ')}
           >
-            <span className="text-lg">{c === 'w' ? '♔' : '♚'}</span>
+            <span className={fs ? 'text-2xl' : 'text-lg'}>{c === 'w' ? '♔' : '♚'}</span>
             {c === 'w' ? 'Play as White' : 'Play as Black'}
           </button>
         ))}
       </div>
 
-      <p className="mb-1 mt-3 border-l-4 border-violet-500 pl-3 text-xs font-semibold uppercase tracking-widest text-slate-200">
+      <p className={`mb-1 mt-3 border-l-4 border-violet-500 pl-3 font-semibold uppercase tracking-widest text-slate-200 ${fs ? 'text-sm' : 'text-xs'}`}>
         Choose Time Control
       </p>
       <div className="mb-3 grid grid-cols-4 gap-2">
@@ -726,15 +754,15 @@ function SetupScreen({
               key={tc}
               onClick={() => onTimeControl(tc)}
               className={[
-                'flex flex-col items-center gap-0.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                `flex flex-col items-center gap-0.5 rounded-xl border font-medium transition-all ${fs ? 'px-6 py-3 text-base' : 'px-3 py-1.5 text-xs'}`,
                 timeControl === tc
                   ? cfg.sel
                   : 'border-zinc-600 bg-zinc-800 text-zinc-300 hover:bg-zinc-700',
               ].join(' ')}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className={fs ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
               <span className="font-semibold">{cfg.label}</span>
-              <span className="text-[10px] opacity-70">{cfg.sub}</span>
+              <span className={`opacity-70 ${fs ? 'text-sm' : 'text-[10px]'}`}>{cfg.sub}</span>
             </button>
           )
         })}
@@ -742,16 +770,16 @@ function SetupScreen({
 
       <button
         onClick={onStart}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-2 text-sm font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
+        className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all hover:from-violet-500 hover:to-purple-500 active:scale-[0.98] ${fs ? 'py-4 text-lg' : 'py-2 text-sm'}`}
       >
-        <Play className="h-4 w-4" />
+        <Play className={fs ? 'h-5 w-5' : 'h-4 w-4'} />
         Start Game
       </button>
 
       {savedGame && (
         <button
           onClick={onResume}
-          className="mt-2 w-full rounded-xl bg-amber-500 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 active:scale-[0.98]"
+          className={`mt-2 w-full rounded-xl bg-amber-500 font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:bg-amber-400 active:scale-[0.98] ${fs ? 'py-4 text-lg' : 'py-2 text-sm'}`}
         >
           Resume Game
         </button>

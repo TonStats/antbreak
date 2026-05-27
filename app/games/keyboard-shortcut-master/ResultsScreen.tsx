@@ -45,7 +45,7 @@ export default function ResultsScreen({
   const accuracy = Math.round((correct / total) * 100)
 
   const LINES = useMemo(() => [
-    `> final_score: ${score} / 1000`,
+    `> final_score: ${score} / 50`,
     `> accuracy: ${accuracy}%`,
     `> correct: ${correct}/${total}`,
     `> mode: ${MODE_NAMES[mode] ?? mode}`,

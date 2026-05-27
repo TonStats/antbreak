@@ -175,7 +175,7 @@ export default function TypingGame() {
   })
   const textareaRef    = useRef<HTMLTextAreaElement>(null)
   const currentCharRef = useRef<HTMLSpanElement>(null)
-  const containerRef   = useRef<HTMLDivElement>(null)
+  const cardRef        = useRef<HTMLDivElement>(null)
   const confettiClean  = useRef<(() => void) | null>(null)
 
   // ── Computed ───────────────────────────────────────────────────────────────
@@ -197,9 +197,11 @@ export default function TypingGame() {
     const wpm          = Math.max(0, Math.round((correctChars / 5) / Math.max(elapsed, 0.001)))
     const accuracy     = Math.round((correctChars / typed.length) * 100)
     return { wpm, accuracy }
-  }, [typed, text, startTime, timeLeft])
+  }, [typed, text, startTime, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const progressPct = startTime ? (timeLeft / duration) * 100 : 100
+  const progressPct  = startTime ? (timeLeft / duration) * 100 : 100
+  const timerUrgent  = timeLeft <= 10 && startTime !== null
+  const timerDisplay = `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}`
 
   // ── endGame ────────────────────────────────────────────────────────────────
 
@@ -237,6 +239,14 @@ export default function TypingGame() {
     const handler = () => setIsFullscreen(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', handler)
     return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  useEffect(() => {
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
   }, [])
 
   // Cleanup confetti if component unmounts mid-animation
@@ -297,126 +307,141 @@ export default function TypingGame() {
     if (value.length >= latest.current.text.length) endGame()
   }
 
-  function toggleFullscreen() {
-    if (isFullscreen) {
-      document.exitFullscreen().catch(() => {})
+  async function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      await cardRef.current?.requestFullscreen()
     } else {
-      ;(containerRef.current ?? document.documentElement).requestFullscreen().catch(() => {})
+      await document.exitFullscreen()
     }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="bg-background px-3 py-3 sm:px-6 sm:py-4">
-      <div
-        ref={containerRef}
-        id="original-game-card"
-        className="relative w-full rounded-2xl bg-slate-700 p-4 dark:bg-slate-800"
-        style={{ boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.3), 0 25px 50px rgba(0, 0, 0, 0.5)' }}
-      >
-        {/* Fullscreen toggle */}
-        <button
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          className="absolute right-3 top-3 rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
-        >
-          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </button>
+  const cardStyle: React.CSSProperties = isFullscreen
+    ? { height: '100vh', width: '100vw', borderRadius: 0 }
+    : {
+        height:    'calc(100vh - 100px)',
+        minHeight: '580px',
+        boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.3), 0 25px 50px rgba(0, 0, 0, 0.5)',
+      }
 
-        {/* Title */}
-        <div className="mb-4 flex items-center justify-center gap-2 border-b border-slate-500 pb-3">
-          <Keyboard className="h-5 w-5 text-violet-400" />
-          <h1 className="text-2xl font-bold text-white">Typing Speed Test</h1>
+  return (
+    <div className="px-3 pb-3 sm:px-6 sm:pb-4">
+      <div
+        ref={cardRef}
+        id="original-game-card"
+        className={`relative flex w-full flex-col bg-slate-700 dark:bg-slate-800 ${isFullscreen ? 'p-6' : 'rounded-2xl p-4'}`}
+        style={cardStyle}
+      >
+
+        {/* Title row — always visible */}
+        <div className="mb-3 flex items-center justify-between border-b border-slate-500 pb-2">
+          <div className="flex items-center gap-2">
+            <Keyboard className="h-5 w-5 text-violet-400" />
+            <h1 className="text-2xl font-bold text-white">Typing Speed Test</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            {stage === 'playing' && (
+              <span
+                className={[
+                  'min-w-[52px] rounded-lg border px-3 py-1 text-center font-mono text-base font-bold',
+                  timerUrgent
+                    ? 'animate-pulse border-rose-500 bg-rose-900/60 text-rose-300'
+                    : 'border-slate-500 bg-slate-600 text-white',
+                ].join(' ')}
+              >
+                {timerDisplay}
+              </span>
+            )}
+            <button
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {/* ────────────── STAGE 1: SETUP ────────────────────────────────── */}
         {stage === 'setup' && (
-          <div className="mx-auto max-w-md">
-            <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
-              Choose Difficulty
-            </p>
-            <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {(Object.keys(DIFFICULTY_CONFIG) as Difficulty[]).map((id) => {
-                const cfg = DIFFICULTY_CONFIG[id]
-                return (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-6">
+            <div className="w-full max-w-md">
+              <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
+                Choose Difficulty
+              </p>
+              <div className="mb-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {(Object.keys(DIFFICULTY_CONFIG) as Difficulty[]).map((id) => {
+                  const cfg = DIFFICULTY_CONFIG[id]
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setDifficulty(id)}
+                      className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
+                        difficulty === id
+                          ? cfg.selectedClass
+                          : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                      }`}
+                    >
+                      <span className="mr-1.5">{cfg.emoji}</span>
+                      {cfg.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
+                Choose Duration
+              </p>
+              <div className="mb-5 grid grid-cols-3 gap-2">
+                {([30, 60, 120] as Duration[]).map((d) => (
                   <button
-                    key={id}
-                    onClick={() => setDifficulty(id)}
-                    className={`rounded-xl border px-4 py-3 text-sm font-medium transition-all ${
-                      difficulty === id
-                        ? cfg.selectedClass
+                    key={d}
+                    onClick={() => setDuration(d)}
+                    className={`rounded-xl border px-6 py-3 text-sm font-medium transition-all ${
+                      duration === d
+                        ? 'border-amber-400 bg-amber-500 font-semibold text-white shadow-lg shadow-amber-500/25'
                         : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                     }`}
                   >
-                    <span className="mr-1.5">{cfg.emoji}</span>
-                    {cfg.label}
+                    ⏱ {d}s
                   </button>
-                )
-              })}
+                ))}
+              </div>
+
+              {personalBest > 0 && (
+                <p className="mb-4 flex items-center gap-1.5 text-xs text-slate-300">
+                  <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                  Your best on {difficulty}:{' '}
+                  <span className="font-semibold text-slate-200">{personalBest} WPM</span>
+                </p>
+              )}
+
+              <button
+                onClick={() => startGame(difficulty, duration)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-4 text-lg font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all duration-200 hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
+              >
+                <Play className="h-5 w-5" />
+                Start Game
+              </button>
             </div>
-
-            <p className="mb-3 border-l-4 border-violet-500 pl-3 text-sm font-semibold uppercase tracking-widest text-slate-200">
-              Choose Duration
-            </p>
-            <div className="mb-5 grid grid-cols-3 gap-2">
-              {([30, 60, 120] as Duration[]).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDuration(d)}
-                  className={`rounded-xl border px-6 py-3 text-sm font-medium transition-all ${
-                    duration === d
-                      ? 'border-amber-400 bg-amber-500 font-semibold text-white shadow-lg shadow-amber-500/25'
-                      : 'border-zinc-600 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                  }`}
-                >
-                  ⏱ {d}s
-                </button>
-              ))}
-            </div>
-
-            {personalBest > 0 && (
-              <p className="mb-4 flex items-center gap-1.5 text-xs text-slate-300">
-                <Trophy className="h-3.5 w-3.5 text-yellow-500" />
-                Your best on {difficulty}:{' '}
-                <span className="font-semibold text-slate-200">{personalBest} WPM</span>
-              </p>
-            )}
-
-            <button
-              onClick={() => startGame(difficulty, duration)}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-4 text-lg font-bold tracking-wide text-white shadow-lg shadow-violet-500/30 transition-all duration-200 hover:from-violet-500 hover:to-purple-500 active:scale-[0.98]"
-            >
-              <Play className="h-5 w-5" />
-              Start Game
-            </button>
           </div>
         )}
 
         {/* ────────────── STAGE 2: PLAYING ─────────────────────────────── */}
         {stage === 'playing' && (
-          <div>
-            {/* Live stats */}
-            <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
-              <StatPill label="WPM"       value={liveStats.wpm}            className="border-blue-700 bg-blue-900/60 text-blue-300" />
-              <StatPill label="Accuracy"  value={`${liveStats.accuracy}%`} className="border-emerald-700 bg-emerald-900/60 text-emerald-300" />
-              <StatPill
-                label="Time Left"
-                value={`${timeLeft}s`}
-                className={timeLeft <= 10 ? 'border-rose-700 bg-rose-900/60 text-rose-300' : 'border-amber-700 bg-amber-900/60 text-amber-300'}
-              />
-            </div>
+          <div className="flex flex-1 flex-col">
 
             {/* Progress bar */}
-            <div className="mb-4 h-2 overflow-hidden rounded-full bg-zinc-700">
+            <div className="mb-3 h-1 overflow-hidden rounded-full bg-zinc-700">
               <div
-                className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 10 && startTime ? 'bg-rose-500' : 'bg-violet-500'}`}
+                className={`h-full transition-all duration-1000 ease-linear ${timerUrgent ? 'bg-rose-500' : 'bg-violet-500'}`}
                 style={{ width: `${progressPct}%` }}
               />
             </div>
 
             {/* Reference text */}
-            <div className="mb-3 max-h-32 overflow-y-auto rounded-xl border border-zinc-600 bg-white p-4 font-mono text-base leading-relaxed select-none dark:bg-white dark:text-zinc-900 sm:text-lg">
+            <div className="min-h-[200px] flex-1 overflow-y-auto rounded-xl border border-zinc-600 bg-white px-6 py-5 font-mono text-lg leading-relaxed select-none dark:bg-white dark:text-zinc-900">
               {text.split('').map((char, i) => {
                 const status = charStatus[i]
                 return (
@@ -436,18 +461,18 @@ export default function TypingGame() {
               })}
             </div>
 
-            {/* Typing input */}
+            {/* Typing textarea */}
             <textarea
               ref={textareaRef}
               value={typed}
               onChange={handleTyping}
-              rows={3}
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
               autoComplete="off"
               placeholder="Type here — timer starts on your first keystroke…"
-              className="w-full resize-none rounded-xl border-2 border-zinc-600 bg-zinc-950 px-4 py-3 font-mono text-base text-white caret-violet-400 outline-none transition-colors placeholder:text-zinc-600 focus:border-violet-500 sm:text-lg"
+              className="mt-4 w-full resize-none rounded-xl border-2 border-zinc-600 bg-zinc-950 px-6 py-4 font-mono text-lg text-white caret-violet-400 outline-none transition-colors placeholder:text-zinc-600 focus:border-violet-500"
+              style={{ minHeight: '120px', maxHeight: '200px', height: 'clamp(120px, 22vh, 200px)' }}
             />
 
             <div className="mt-2 flex justify-end">
@@ -458,41 +483,26 @@ export default function TypingGame() {
                 End test early
               </button>
             </div>
+
           </div>
         )}
 
         {/* ────────────── STAGE 3: RESULTS ─────────────────────────────── */}
         {stage === 'finished' && result && (
-          <ResultsScreen
-            result={result}
-            showNewBest={showNewBest}
-            personalBest={personalBest}
-            difficulty={difficulty}
-            onPlayAgain={() => startGame(difficulty, duration)}
-            onTryDifferentMode={() => { confettiClean.current?.(); confettiClean.current = null; setStage('setup') }}
-            onDownloadBadge={() => downloadBadge(result.wpm, result.accuracy, result.grade)}
-          />
+          <div className="flex-1 overflow-y-auto">
+            <ResultsScreen
+              result={result}
+              showNewBest={showNewBest}
+              personalBest={personalBest}
+              difficulty={difficulty}
+              onPlayAgain={() => startGame(difficulty, duration)}
+              onTryDifferentMode={() => { confettiClean.current?.(); confettiClean.current = null; setStage('setup') }}
+              onDownloadBadge={() => downloadBadge(result.wpm, result.accuracy, result.grade)}
+            />
+          </div>
         )}
+
       </div>
-    </div>
-  )
-}
-
-// ── StatPill ──────────────────────────────────────────────────────────────────
-
-function StatPill({
-  label,
-  value,
-  className,
-}: {
-  label: string
-  value: number | string
-  className: string
-}) {
-  return (
-    <div className={`rounded-xl border px-3 py-2 text-center ${className}`}>
-      <div className="text-xl font-bold tabular-nums sm:text-2xl">{value}</div>
-      <div className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</div>
     </div>
   )
 }

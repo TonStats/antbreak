@@ -10,10 +10,12 @@ interface Props {
   os: 'windows' | 'mac'
   onQuit: () => void
   onFinish: (score: number, correct: number, total: number, wrongIds: string[]) => void
+  onTimeChange?: (t: number) => void
 }
 
-const Q_TOTAL = 10
-const Q_TIME  = 5
+const Q_TOTAL             = 10
+const ANSWER_TIME_SECONDS = 13
+const POINTS_PER_CORRECT  = 5
 const DIFF_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2 }
 
 type Feedback = { chosen: string | null; correct: string }
@@ -28,7 +30,7 @@ function generateOptions(question: Shortcut, allShortcuts: Shortcut[]): string[]
   return [...wrong, correct].sort(() => Math.random() - 0.5)
 }
 
-export default function ReverseMode({ software, difficulty, os, onQuit, onFinish }: Props) {
+export default function ReverseMode({ software, difficulty, os, onQuit, onFinish, onTimeChange }: Props) {
   const allShortcuts = useMemo(
     () => SHORTCUT_CATEGORIES.find(c => c.id === software)?.shortcuts ?? [],
     [software],
@@ -43,7 +45,6 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
   const [currentQ, setCurrentQ]         = useState(0)
   const [score, setScore]               = useState(0)
   const [correctCount, setCorrectCount] = useState(0)
-  const [timeLeft, setTimeLeft]         = useState(Q_TIME)
   const [feedback, setFeedback]         = useState<Feedback | null>(null)
   const [totalTime, setTotalTime]       = useState(0)
 
@@ -58,6 +59,7 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
 
   const total   = questions.length
   const catInfo = SHORTCUT_CATEGORIES.find(c => c.id === software)
+  const progressPct = (currentQ / total) * 100
 
   useEffect(() => {
     const iv = setInterval(() => setTotalTime(t => t + 1), 1000)
@@ -71,18 +73,15 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
 
     const q = questionsRef.current[currentQRef.current]
     if (!q) return
-    const isCorrect  = chosen === q.action
-    const timeTaken  = (Date.now() - questionStartRef.current) / 1000
-    const bonus      = isCorrect && timeTaken < 2
+    const isCorrect = chosen === q.action
 
     if (isCorrect) {
-      const pts = bonus ? 150 : 100
-      scoreRef.current   += pts
+      scoreRef.current   += POINTS_PER_CORRECT
       correctRef.current += 1
       setScore(scoreRef.current)
       setCorrectCount(correctRef.current)
     } else {
-      wrongIdsRef.current.push(q.id)
+      if (!wrongIdsRef.current.includes(q.id)) wrongIdsRef.current.push(q.id)
     }
     setFeedback({ chosen, correct: q.action })
 
@@ -92,24 +91,23 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
         onFinish(scoreRef.current, correctRef.current, questionsRef.current.length, wrongIdsRef.current)
         return
       }
-      currentQRef.current    = next
-      answeredRef.current    = false
+      currentQRef.current      = next
+      answeredRef.current      = false
       questionStartRef.current = Date.now()
       setCurrentQ(next)
       setFeedback(null)
-      setTimeLeft(Q_TIME)
     }, 1500)
   }, [onFinish])
 
   useEffect(() => {
     answeredRef.current      = false
     questionStartRef.current = Date.now()
-    setTimeLeft(Q_TIME)
+    onTimeChange?.(ANSWER_TIME_SECONDS)
 
     const start = Date.now()
     timerRef.current = setInterval(() => {
-      const remaining = Math.max(0, Q_TIME - (Date.now() - start) / 1000)
-      setTimeLeft(remaining)
+      const remaining = Math.max(0, ANSWER_TIME_SECONDS - (Date.now() - start) / 1000)
+      onTimeChange?.(Math.ceil(remaining))
       if (remaining <= 0) {
         clearInterval(timerRef.current)
         submitAnswer(null)
@@ -117,15 +115,14 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
     }, 100)
 
     return () => clearInterval(timerRef.current)
-  }, [currentQ, submitAnswer])
+  }, [currentQ, submitAnswer, onTimeChange])
+
+  // suppress unused-var warning — onQuit is passed by parent, quit button lives in KeyboardGame header
+  void onQuit
 
   const question    = questions[currentQ]
   const correctKeys = question?.keys[os] ?? []
   const options     = allOptions[currentQ] ?? []
-
-  const timerPct   = (timeLeft / Q_TIME) * 100
-  const timerColor = timeLeft > 3 ? 'bg-green-500' : timeLeft > 1 ? 'bg-yellow-500' : 'bg-red-500'
-  const progressPct = (currentQ / total) * 100
 
   if (!question) {
     return (
@@ -139,25 +136,10 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
     <div className="flex flex-col gap-3">
 
       {/* ── Top bar ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between h-10">
-        <span className="text-green-400 font-mono text-sm">
-          {currentQ + 1} / {total}
-        </span>
-        <span className="text-zinc-400 font-mono text-sm">
-          {catInfo?.icon} {catInfo?.name}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="text-green-400 font-mono text-sm">
-            score: {score} | {totalTime}s
-          </span>
-          <button
-            type="button"
-            onClick={onQuit}
-            className="text-xs font-mono text-zinc-600 hover:text-rose-400 transition-colors ml-2"
-          >
-            ⬛ quit
-          </button>
-        </div>
+      <div className="flex items-center justify-between h-8">
+        <span className="text-green-400 font-mono text-sm">{currentQ + 1} / {total}</span>
+        <span className="text-zinc-400 font-mono text-sm">{catInfo?.icon} {catInfo?.name}</span>
+        <span className="text-green-400 font-mono text-sm">score: {score} | {totalTime}s</span>
       </div>
 
       {/* ── Progress bar ────────────────────────────────────── */}
@@ -189,16 +171,6 @@ export default function ReverseMode({ software, difficulty, os, onQuit, onFinish
         <p className="text-zinc-400 text-sm text-center font-mono mb-4">
           What does this shortcut do?
         </p>
-
-        {/* Timer bar */}
-        {!feedback && (
-          <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden mb-4">
-            <div
-              className={`h-full ${timerColor} rounded-full transition-all duration-100`}
-              style={{ width: `${timerPct}%` }}
-            />
-          </div>
-        )}
 
         {/* Answer options */}
         <div className="flex flex-col gap-2">

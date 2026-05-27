@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { getDailySet } from '@/data/memoryContent'
+import { X } from 'lucide-react'
+import { getRandomFlashSet } from '@/data/memoryContent'
 import type { DailyImage } from '@/types/memory'
 import Confetti from './Confetti'
 import { downloadShareBadge } from './shareUtils'
@@ -15,45 +16,49 @@ const WRONG_ADV_MS   = 1200
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
-function todayKey() {
-  return `memory_daily_${new Date().toISOString().split('T')[0]}`
+function updateStreak() {
+  const today     = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]
+  const lastPlay  = localStorage.getItem('memory_last_play') ?? ''
+  if (lastPlay !== today) {
+    const streak    = Number(localStorage.getItem('memory_streak') ?? 0)
+    const newStreak = lastPlay === yesterday ? streak + 1 : 1
+    localStorage.setItem('memory_streak', String(newStreak))
+    localStorage.setItem('memory_last_play', today)
+  }
 }
 
 interface Props { onQuit: () => void }
 
 export default function DailyFlash({ onQuit }: Props) {
   const [stage,           setStage]           = useState<Stage>('countdown')
+  const [gameKey,         setGameKey]         = useState(0)
   const [countdown,       setCountdown]       = useState(3)
   const [flashIndex,      setFlashIndex]      = useState(-1)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswer,  setSelectedAnswer]  = useState<string | null>(null)
   const [score,           setScore]           = useState(0)
-  const [alreadyDone,     setAlreadyDone]     = useState(false)
-  const [prevScore,       setPrevScore]       = useState(0)
   const [isNewBest,       setIsNewBest]       = useState(false)
   const [prevBestDaily,   setPrevBestDaily]   = useState(0)
   const [streakCount,     setStreakCount]     = useState(0)
-  const [midnight,        setMidnight]        = useState('')
   const [data,            setData]            = useState<DailyImage | null>(null)
 
   const scoreRef = useRef(0)
   const dataRef  = useRef<DailyImage | null>(null)
 
   useEffect(() => {
-    const d   = getDailySet()
-    const key = todayKey()
+    const d = getRandomFlashSet()
     dataRef.current = d
     setData(d)
-
+    scoreRef.current = 0
+    setScore(0)
+    setStage('countdown')
+    setCountdown(3)
+    setFlashIndex(-1)
+    setCurrentQuestion(0)
+    setSelectedAnswer(null)
+    setIsNewBest(false)
     setPrevBestDaily(Number(localStorage.getItem('memory_best_daily') ?? 0))
-
-    const stored = localStorage.getItem(key)
-    if (stored) {
-      try { setPrevScore(JSON.parse(stored).score ?? 0) } catch {}
-      setAlreadyDone(true)
-      setStage('done')
-      return
-    }
 
     async function run() {
       for (let i = 3; i >= 1; i--) {
@@ -74,25 +79,7 @@ export default function DailyFlash({ onQuit }: Props) {
       setStage('questions')
     }
     run()
-  }, [])
-
-  // Midnight countdown
-  useEffect(() => {
-    if (stage !== 'done') return
-    function tick() {
-      const now  = new Date()
-      const next = new Date()
-      next.setHours(24, 0, 0, 0)
-      const diff = next.getTime() - now.getTime()
-      const h = Math.floor(diff / 3_600_000)
-      const m = Math.floor((diff % 3_600_000) / 60_000)
-      const s = Math.floor((diff % 60_000) / 1_000)
-      setMidnight(`${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`)
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [stage])
+  }, [gameKey])
 
   async function handleAnswer(selected: string) {
     if (selectedAnswer !== null || !dataRef.current) return
@@ -103,7 +90,7 @@ export default function DailyFlash({ onQuit }: Props) {
 
     let newScore = scoreRef.current
     if (isCorrect) {
-      newScore += 100
+      newScore += 5
       scoreRef.current = newScore
       setScore(newScore)
       await delay(CORRECT_ADV_MS)
@@ -123,17 +110,8 @@ export default function DailyFlash({ onQuit }: Props) {
   }
 
   function saveResult(finalScore: number) {
-    const key       = todayKey()
-    const today     = new Date().toISOString().split('T')[0]
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]
-
-    localStorage.setItem(key, JSON.stringify({ score: finalScore, completed: true, date: today }))
-
-    const hadYesterday   = !!localStorage.getItem(`memory_daily_${yesterday}`)
-    const currentStreak  = Number(localStorage.getItem('memory_streak') ?? 0)
-    const newStreak      = hadYesterday ? currentStreak + 1 : 1
-    localStorage.setItem('memory_streak', String(newStreak))
-    setStreakCount(newStreak)
+    updateStreak()
+    setStreakCount(Number(localStorage.getItem('memory_streak') ?? 1))
 
     const best    = Number(localStorage.getItem('memory_best_daily') ?? 0)
     const newBest = finalScore > best
@@ -142,10 +120,21 @@ export default function DailyFlash({ onQuit }: Props) {
     setPrevBestDaily(newBest ? finalScore : best)
   }
 
+  const QUIT_BTN = (
+    <button
+      onClick={onQuit}
+      title="Quit to menu"
+      className="bg-rose-950/40 border border-rose-700/60 text-rose-400 hover:bg-rose-900/60 hover:border-rose-500 hover:text-rose-300 rounded-lg p-2 w-9 h-9 flex items-center justify-center transition-all duration-150"
+    >
+      <X size={18} />
+    </button>
+  )
+
   // ── Countdown ─────────────────────────────────────────────────────────
   if (stage === 'countdown') {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-6">
+      <div className="relative flex h-full flex-col items-center justify-center gap-6">
+        <div className="absolute top-0 right-0">{QUIT_BTN}</div>
         <div className="text-6xl">👁️</div>
         <h3 className="text-2xl font-bold text-white">Get Ready!</h3>
         <p className="text-sm text-purple-200">5 images will flash on screen</p>
@@ -157,7 +146,8 @@ export default function DailyFlash({ onQuit }: Props) {
   // ── Flash ─────────────────────────────────────────────────────────────
   if (stage === 'flash') {
     return (
-      <div className="flex h-full flex-col items-center justify-center">
+      <div className="relative flex h-full flex-col items-center justify-center">
+        <div className="absolute top-0 right-0">{QUIT_BTN}</div>
         {flashIndex === -2 ? (
           <span className="text-6xl text-white">?</span>
         ) : flashIndex >= 0 && data ? (
@@ -187,10 +177,17 @@ export default function DailyFlash({ onQuit }: Props) {
   if (stage === 'questions' && data) {
     const q        = data.questions[currentQuestion]
     const totalQ   = data.questions.length
+    const maxScore = totalQ * 5
     const answered = selectedAnswer !== null
 
     return (
       <div className="flex h-full flex-col justify-center gap-5 px-2">
+
+        {/* Header with quit */}
+        <div className="flex items-center justify-between">
+          <span className="text-purple-200/70 text-sm font-semibold">⚡ Flash Cards</span>
+          {QUIT_BTN}
+        </div>
 
         {/* Progress */}
         <div className="flex items-center gap-2">
@@ -213,7 +210,7 @@ export default function DailyFlash({ onQuit }: Props) {
           </span>
         </div>
 
-        <p className="text-right text-sm font-semibold text-pink-300">{score} pts</p>
+        <p className="text-right text-sm font-semibold text-pink-300">{score}/{maxScore} pts</p>
 
         <p className="text-center text-lg font-semibold text-white">{q.question}</p>
 
@@ -251,68 +248,57 @@ export default function DailyFlash({ onQuit }: Props) {
   }
 
   // ── Done ──────────────────────────────────────────────────────────────
-  const displayScore = alreadyDone ? prevScore : score
-  const maxScore     = data ? data.questions.length * 100 : 400
-  const pct          = Math.round((displayScore / maxScore) * 100)
-  const showConfetti = !alreadyDone && displayScore >= 300
+  const maxScore  = data ? data.questions.length * 5 : 20
+  const pct       = Math.round((score / maxScore) * 100)
+  const showConfetti = pct >= 75
 
   return (
     <div className="relative flex h-full flex-col items-center justify-center gap-4">
       <Confetti active={showConfetti} />
 
-      {alreadyDone ? (
-        <>
-          <div className="text-5xl">✅</div>
-          <h3 className="text-2xl font-bold text-white">Already Completed Today!</h3>
-          <p className="text-sm text-purple-200/70">Come back tomorrow for a new challenge</p>
-        </>
-      ) : (
-        <>
-          <div className="text-5xl">⚡</div>
-          <h3 className="text-2xl font-bold text-white">Daily Complete!</h3>
-          {streakCount > 0 && (
-            <p className="text-sm font-semibold text-orange-300">🔥 {streakCount} day streak</p>
-          )}
-        </>
+      <div className="text-5xl">⚡</div>
+      <h3 className="text-2xl font-bold text-white">Flash Cards Complete!</h3>
+      {streakCount > 0 && (
+        <p className="text-sm font-semibold text-orange-300">🔥 {streakCount} day streak</p>
       )}
 
       <div className="text-center">
-        <p className="text-3xl font-bold text-pink-300">{displayScore}/{maxScore}</p>
+        <p className="text-3xl font-bold text-pink-300">{score}/{maxScore}</p>
         <p className="mt-0.5 text-xs text-purple-300/50">{pct}% correct</p>
       </div>
 
-      {!alreadyDone && (
-        <p className={`text-xs ${isNewBest ? 'animate-sparkle text-amber-400' : 'text-purple-300/50'}`}>
-          {isNewBest ? `★ New Personal Best! ${prevBestDaily} pts` : `Your best: ${prevBestDaily} pts`}
-        </p>
-      )}
-
-      {midnight && (
-        <p className="text-xs text-purple-300/60">Next challenge in {midnight}</p>
-      )}
-
-      {!alreadyDone && (
-        <button
-          onClick={() =>
-            downloadShareBadge({
-              mode:     'Daily Flash',
-              mainStat: `${pct}%`,
-              subLabel: `${displayScore}/${maxScore} correct`,
-              score:    displayScore,
-            })
-          }
-          className="text-xs text-purple-400/50 underline transition-colors hover:text-purple-300/70"
-        >
-          ↓ Share result
-        </button>
-      )}
+      <p className={`text-xs ${isNewBest ? 'animate-sparkle text-amber-400' : 'text-purple-300/50'}`}>
+        {isNewBest ? `★ New Personal Best! ${prevBestDaily} pts` : `Your best: ${prevBestDaily} pts`}
+      </p>
 
       <button
-        onClick={onQuit}
-        className="rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-white/60 transition-all hover:text-white/80"
+        onClick={() =>
+          downloadShareBadge({
+            mode:     'Flash Cards',
+            mainStat: `${pct}%`,
+            subLabel: `${score}/${maxScore} correct`,
+            score,
+          })
+        }
+        className="text-xs text-purple-400/50 underline transition-colors hover:text-purple-300/70"
       >
-        Back
+        ↓ Share result
       </button>
+
+      <div className="flex gap-3">
+        <button
+          onClick={() => setGameKey((k) => k + 1)}
+          className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 font-bold text-white transition-all hover:from-purple-500 hover:to-pink-500"
+        >
+          Play Again
+        </button>
+        <button
+          onClick={onQuit}
+          className="rounded-xl border border-white/10 bg-white/5 px-6 py-2.5 text-white/60 transition-all hover:text-white/80"
+        >
+          Change Mode
+        </button>
+      </div>
     </div>
   )
 }

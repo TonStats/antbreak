@@ -5,6 +5,7 @@ export interface Shortcut {
   category: string
   difficulty: 'easy' | 'medium' | 'hard'
   hint?: string
+  dangerous?: true
 }
 
 export interface ShortcutCategory {

@@ -347,11 +347,17 @@ export function getDailySet(): DailyImage {
   return DAILY_FLASH_SETS[day % DAILY_FLASH_SETS.length]
 }
 
+export function getRandomFlashSet(): DailyImage {
+  const idx = Math.floor(Math.random() * DAILY_FLASH_SETS.length)
+  return DAILY_FLASH_SETS[idx]
+}
+
 export function getGridCards(difficulty: Difficulty, theme: string): MemoryCard[] {
-  const emojiPool = EMOJI_THEMES[theme] ?? EMOJI_THEMES.animals
   const pairCount = difficulty === 'easy' ? 8 : difficulty === 'medium' ? 12 : difficulty === 'hard' ? 15 : 18
-  const selected = emojiPool.slice(0, pairCount)
-  const pairs = [...selected, ...selected]
+  const emojiPool = theme === 'all'
+    ? Object.values(EMOJI_THEMES).flat().sort(() => Math.random() - 0.5).slice(0, pairCount)
+    : (EMOJI_THEMES[theme] ?? EMOJI_THEMES.animals).slice(0, pairCount)
+  const pairs = [...emojiPool, ...emojiPool]
   for (let i = pairs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[pairs[i], pairs[j]] = [pairs[j], pairs[i]]

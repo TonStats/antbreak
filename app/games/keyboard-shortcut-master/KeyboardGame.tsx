@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Keyboard } from 'lucide-react'
+import { Keyboard, X, Maximize2, Minimize2 } from 'lucide-react'
 import { SHORTCUT_CATEGORIES, detectOS } from '@/data/keyboardShortcuts'
 import SprintMode from './SprintMode'
 import ReverseMode from './ReverseMode'
@@ -24,6 +24,19 @@ const DIFFICULTIES: { id: Difficulty; label: string; active: string }[] = [
   { id: 'hard',   label: 'Hard',   active: 'bg-rose-900 text-rose-400 border-rose-700'         },
 ]
 
+function TimerBadge({ timeLeft }: { timeLeft: number }) {
+  const cls = timeLeft <= 3
+    ? 'border-rose-700 bg-rose-900/30 text-rose-400 animate-pulse'
+    : timeLeft <= 7
+    ? 'border-yellow-700 bg-yellow-900/30 text-yellow-300'
+    : 'border-teal-700 bg-teal-900/30 text-teal-300'
+  return (
+    <div className={`flex h-12 w-12 items-center justify-center rounded-xl border font-mono text-2xl font-bold ${cls}`}>
+      {timeLeft}
+    </div>
+  )
+}
+
 export default function KeyboardGame() {
   const [stage, setStage]               = useState<Stage>('setup')
   const [os, setOs]                     = useState<OS>('windows')
@@ -37,6 +50,10 @@ export default function KeyboardGame() {
   const [gameResult, setGameResult]     = useState<{ score: number; correct: number; total: number; newBadge?: string } | null>(null)
   const [browserNotice, setBrowserNotice] = useState(false)
   const [showGuide, setShowGuide]         = useState(false)
+  const [isFullscreen, setIsFullscreen]   = useState(false)
+  const [currentTimeLeft, setCurrentTimeLeft] = useState(0)
+
+  const cardRef     = useRef<HTMLDivElement>(null)
   const gameStartRef = useRef<number>(0)
 
   useEffect(() => {
@@ -46,12 +63,23 @@ export default function KeyboardGame() {
     if (saved) setBadges(JSON.parse(saved) as string[])
   }, [])
 
-  // Prevent browser shortcuts during gameplay
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  // Prevent browser shortcuts during gameplay (capture phase, with dev-tool exceptions)
   useEffect(() => {
     if (stage !== 'playing') return
-    const handler = (e: KeyboardEvent) => e.preventDefault()
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
+    const allowedKeys = ['Escape', 'F11', 'F5']
+    const handler = (e: KeyboardEvent) => {
+      if (allowedKeys.includes(e.key)) return
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'J'].includes(e.key.toUpperCase())) return
+      e.preventDefault()
+    }
+    document.addEventListener('keydown', handler, { capture: true })
+    return () => document.removeEventListener('keydown', handler, { capture: true })
   }, [stage])
 
   // Browser notice fade-out
@@ -80,7 +108,6 @@ export default function KeyboardGame() {
   }
 
   function handleFinish(score: number, correct: number, total: number, wrongIds: string[]) {
-    // Save last/best for setup screen display
     const key = `kb_score_${mode}_${software}_${difficulty}`
     const scoreStr = `${correct}/${total}`
     localStorage.setItem(`${key}_last`, scoreStr)
@@ -88,7 +115,6 @@ export default function KeyboardGame() {
     const prevNum = prev ? parseInt(prev.split('/')[0]) : -1
     if (correct > prevNum) localStorage.setItem(`${key}_best`, scoreStr)
 
-    // Award gauntlet badge
     let newBadge: string | undefined
     if (mode === 'gauntlet' && software && correct / total >= 0.8) {
       if (!badges.includes(software)) {
@@ -99,7 +125,6 @@ export default function KeyboardGame() {
       }
     }
 
-    // Save session history
     const timeSeconds = Math.round((Date.now() - gameStartRef.current) / 1000)
     const entry = { mode, category: software, difficulty, score, correct, total, date: new Date().toISOString(), timeSeconds, wrongShortcuts: wrongIds }
     const history: unknown[] = JSON.parse(localStorage.getItem('kb_history') ?? '[]')
@@ -112,12 +137,22 @@ export default function KeyboardGame() {
   function handleQuit() {
     setStage('setup')
     setGameResult(null)
+    setCurrentTimeLeft(0)
+  }
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else if (cardRef.current) {
+      cardRef.current.requestFullscreen()
+    }
   }
 
   const canStart = Boolean(mode && software)
 
   return (
     <div
+      ref={cardRef}
       id="original-game-card"
       className="h-full rounded-2xl p-5 overflow-y-auto"
       style={{
@@ -131,11 +166,34 @@ export default function KeyboardGame() {
     >
       {/* ── Header ──────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-1">
-        <Keyboard className="h-6 w-6 text-green-400 shrink-0" />
-        <h1 className="text-2xl font-bold text-green-400 font-mono">
+        <Keyboard className="h-5 w-5 text-green-400 shrink-0" />
+        <h1 className="text-xl font-bold text-green-400 font-mono flex-1">
           Keyboard Shortcut Master
         </h1>
-        <span className="animate-pulse inline-block w-2 h-5 bg-green-400 ml-1 align-middle" />
+        {stage === 'playing' && <TimerBadge timeLeft={currentTimeLeft} />}
+        {stage === 'playing' && (
+          <button
+            type="button"
+            onClick={handleQuit}
+            className="text-zinc-600 hover:text-rose-400 transition-colors p-1"
+            aria-label="Quit game"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="text-zinc-600 hover:text-green-400 transition-colors p-1"
+          aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        >
+          {isFullscreen
+            ? <Minimize2 className="h-4 w-4" />
+            : <Maximize2 className="h-4 w-4" />}
+        </button>
+        {stage !== 'playing' && (
+          <span className="animate-pulse inline-block w-2 h-5 bg-green-400 align-middle" />
+        )}
       </div>
       <hr className="border-green-900 mb-4" />
 
@@ -290,8 +348,7 @@ export default function KeyboardGame() {
                 <p>{'// SHORTCUT SPRINT:'}</p>
                 <p>{'// An action appears on screen.'}</p>
                 <p>{'// Press the correct key combination'}</p>
-                <p>{'// on your keyboard within 5 seconds.'}</p>
-                <p>{'// Speed bonus for answering under 2s.'}</p>
+                <p>{'// on your keyboard within 13 seconds.'}</p>
                 <p>&nbsp;</p>
                 <p>{'// REVERSE CHALLENGE:'}</p>
                 <p>{'// A key combination appears on screen.'}</p>
@@ -318,8 +375,8 @@ export default function KeyboardGame() {
 
       {/* ── Browser notice ───────────────────────────────── */}
       {stage === 'playing' && (
-        <p className={`text-zinc-600 text-xs font-mono mb-1 transition-opacity duration-700 ${browserNotice ? 'opacity-100' : 'opacity-0'}`}>
-          ⚠ Browser shortcuts disabled during game
+        <p className={`text-green-700/60 text-xs font-mono mb-1 transition-opacity duration-700 ${browserNotice ? 'opacity-100' : 'opacity-0'}`}>
+          ⚠ Browser shortcuts are intercepted during gameplay
         </p>
       )}
 
@@ -332,6 +389,7 @@ export default function KeyboardGame() {
           showKeyboard={showKeyboard}
           onQuit={handleQuit}
           onFinish={handleFinish}
+          onTimeChange={setCurrentTimeLeft}
         />
       )}
 
@@ -343,6 +401,7 @@ export default function KeyboardGame() {
           os={os}
           onQuit={handleQuit}
           onFinish={handleFinish}
+          onTimeChange={setCurrentTimeLeft}
         />
       )}
 
@@ -355,6 +414,7 @@ export default function KeyboardGame() {
           showKeyboard={showKeyboard}
           onQuit={handleQuit}
           onFinish={handleFinish}
+          onTimeChange={setCurrentTimeLeft}
           gauntlet
         />
       )}
