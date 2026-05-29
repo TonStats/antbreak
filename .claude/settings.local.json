@@ -7,7 +7,17 @@
       "Bash(npm ls *)",
       "Bash(Remove-Item C:/Users/USER/Projects/antbreak/reverse_q1.png, C:/Users/USER/Projects/antbreak/reverse_feedback.png, C:/Users/USER/Projects/antbreak/gauntlet_q1.png, C:/Users/USER/Projects/antbreak/gauntlet_results.png, C:/Users/USER/Projects/antbreak/results_screen.png -ErrorAction SilentlyContinue)",
       "PowerShell(Remove-Item *)",
-      "Bash(curl -s http://localhost:3000/games/image-memory-test)"
+      "Bash(curl -s http://localhost:3000/games/image-memory-test)",
+      "Bash(npx which *)",
+      "Bash(npm list *)",
+      "Bash(curl -s \"http://localhost:3000/games/bible-quiz\")",
+      "Bash(python3 -c \"from playwright.sync_api import sync_playwright; print\\('python playwright ok'\\)\")",
+      "Bash(python3 -c \"import subprocess; print\\(subprocess.run\\(['npx','playwright','--version'],capture_output=True,text=True\\).stdout\\)\")",
+      "Bash(npx --yes playwright@1.60.0 --version)",
+      "Bash(npm install *)",
+      "Bash(curl *)",
+      "Bash(npm run *)",
+      "Bash(echo \"PID: $!\")"
     ]
   }
 }

@@ -155,3 +155,20 @@
   display: flex !important;
   flex-direction: column !important;
 }
+
+/* Bible Quiz fullscreen */
+:fullscreen .bible-quiz-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .bible-quiz-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
