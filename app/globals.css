@@ -202,3 +202,19 @@
   display: flex !important;
   flex-direction: column !important;
 }
+
+/* Puzzle Test fullscreen */
+:fullscreen .puzzle-game-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .puzzle-game-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}

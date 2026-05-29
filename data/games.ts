@@ -227,6 +227,42 @@ export const GAMES: Game[] = [
     },
   },
   {
+    id: 'puzzle-test',
+    name: 'Puzzle Test',
+    slug: 'puzzle-test',
+    category: 'original-games',
+    description:
+      'Six types of visual and logical puzzles in one game. Number sequences, logic grids, odd one out, ' +
+      'rebus decoding, and spatial challenges rotate so every question feels fresh.',
+    howToPlay: [
+      'Choose Classic, Speed Run, or Daily mode',
+      'Each question is a different puzzle type — stay sharp',
+      'Select the correct answer from the options shown',
+      'Use hints sparingly — they cost points',
+      'Complete the daily challenge to build your streak',
+    ],
+    tips: [
+      'For sequences look at the differences between numbers, not just the values',
+      'In odd one out, consider multiple categories before deciding',
+      'Rebus puzzles use sound rather than spelling — say it out loud',
+    ],
+    thumbnail: '/thumbnails/puzzle-test.webp',
+    gameUrl: '/games/puzzle-test',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-05-29',
+    tags: ['puzzle', 'logic', 'sequence', 'brain', 'visual'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
+  {
     id: 'riddle-test',
     name: 'Riddle Test',
     slug: 'riddle-test',
