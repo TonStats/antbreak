@@ -227,6 +227,42 @@ export const GAMES: Game[] = [
     },
   },
   {
+    id: 'general-knowledge-arena',
+    name: 'General Knowledge Arena',
+    slug: 'general-knowledge-arena',
+    category: 'original-games',
+    description:
+      'Seven knowledge categories in one competitive trivia game. Test science, history, sports, ' +
+      'entertainment, finance, health and arts knowledge across four unique game modes.',
+    howToPlay: [
+      'Choose Category Blitz, Arena, Sudden Death or Daily mode',
+      'Select your difficulty level',
+      'Answer each question within the time limit',
+      'Read the explanation after each answer',
+      'Earn category badges by scoring 80%+ in a category',
+    ],
+    tips: [
+      'In Arena mode, save your strongest categories for later rounds',
+      'Sudden Death rewards calm, methodical thinking over speed',
+      'Daily mode covers all 7 categories — prepare broadly',
+    ],
+    thumbnail: '/thumbnails/general-knowledge-arena.webp',
+    gameUrl: '/games/general-knowledge-arena',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-05-29',
+    tags: ['trivia', 'knowledge', 'quiz', 'science', 'history', 'sports'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
+  {
     id: 'puzzle-test',
     name: 'Puzzle Test',
     slug: 'puzzle-test',
