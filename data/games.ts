@@ -368,5 +368,42 @@ export const GAMES: Game[] = [
       allowFullscreen: true,
     },
   },
+  {
+    id: 'emoji-crush',
+    name: 'Emoji Crush',
+    slug: 'emoji-crush',
+    category: 'original-games',
+    description:
+      'Swap and match emojis to collect targets across 50 hand-crafted levels. ' +
+      'Unlock bombs and rainbows, overcome locked and stone obstacles, and earn ' +
+      'up to 3 stars per level.',
+    howToPlay: [
+      'Select a level from the story map and press Start Level',
+      'Swap two adjacent emojis to create a line of 3 or more',
+      'Match your target emojis to fill the collection bar',
+      'Match 4 in a row to create a Bomb — match 5 or more for a Rainbow',
+      'Complete all targets before your moves run out to win',
+    ],
+    tips: [
+      'Prioritise matches that collect your target emojis over random matches',
+      'Save bombs and rainbows for clearing locked or stone cell obstacles',
+      'Cascading matches earn bonus score — set up chain reactions for big points',
+    ],
+    thumbnail: '/thumbnails/emoji-crush.webp',
+    gameUrl: '/games/emoji-crush',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-06-02',
+    tags: ['match3', 'puzzle', 'emoji', 'casual', 'levels'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]

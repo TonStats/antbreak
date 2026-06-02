@@ -253,6 +253,57 @@
   flex-direction: column !important;
 }
 
+/* Emoji Crush — cell animations */
+@keyframes dropIn {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+.cell-new {
+  animation: dropIn 0.3s ease-out;
+}
+
+@keyframes cellFall {
+  from { transform: translateY(-12%); }
+  to   { transform: translateY(0); }
+}
+.cell-falling {
+  animation: cellFall 0.25s ease-out;
+}
+
+@keyframes floatUp {
+  0%   { transform: translateY(0);     opacity: 1; }
+  100% { transform: translateY(-56px); opacity: 0; }
+}
+.special-text {
+  animation: floatUp 0.9s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes cellExplode {
+  0%   { background-color: rgba(251,146,60,0.75); transform: scale(1.35); }
+  100% { background-color: transparent;           transform: scale(1); }
+}
+.cell-exploding {
+  animation: cellExplode 0.35s ease-out forwards;
+  z-index: 5;
+}
+
+/* Emoji Crush fullscreen */
+:fullscreen .emoji-crush-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .emoji-crush-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 @keyframes best-flash {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.25; }
