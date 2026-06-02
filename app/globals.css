@@ -234,3 +234,29 @@
   display: flex !important;
   flex-direction: column !important;
 }
+
+/* Reaction Time Tester fullscreen */
+:fullscreen .reaction-game-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  background: #000000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .reaction-game-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  background: #000000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+@keyframes best-flash {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+.animate-best-flash {
+  animation: best-flash 0.4s ease-in-out 3;
+}

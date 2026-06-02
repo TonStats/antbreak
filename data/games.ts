@@ -332,5 +332,41 @@ export const GAMES: Game[] = [
       allowFullscreen: true,
     },
   },
+  {
+    id: 'reaction-time-tester',
+    name: 'Reaction Time Tester',
+    slug: 'reaction-time-tester',
+    category: 'original-games',
+    description:
+      'Measure your reaction speed across four precision tests. Click the color, aim at targets, ' +
+      'recognise numbers, and match rhythm. See your time in milliseconds and compare to the average.',
+    howToPlay: [
+      'Choose a test type from the menu',
+      'Follow the on-screen instructions for each test',
+      'React as fast as possible when the stimulus appears',
+      'Avoid false starts — they add a penalty',
+      'Complete all rounds to see your average reaction time',
+    ],
+    tips: [
+      'Relax your hand before each round — tension slows your reaction',
+      'Focus on the center of the screen so you spot changes faster',
+      'Morning sessions typically produce faster reactions than late at night',
+    ],
+    thumbnail: '/thumbnails/reaction-time-tester.webp',
+    gameUrl: '/games/reaction-time-tester',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-05-31',
+    tags: ['reaction', 'speed', 'timing', 'reflex', 'brain'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]
