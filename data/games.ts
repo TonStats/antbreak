@@ -479,5 +479,42 @@ export const GAMES: Game[] = [
       allowFullscreen: true,
     },
   },
+  {
+    id: 'nonogram',
+    name: 'Nonogram',
+    slug: 'nonogram',
+    category: 'original-games',
+    description:
+      'Fill in the grid using number clues to reveal hidden pixel art. ' +
+      'Numbers show groups of filled cells in each row and column. ' +
+      '100 handcrafted puzzles from 5×5 to 15×15.',
+    howToPlay: [
+      'Numbers on rows and columns tell you which cells to fill',
+      'Left-click to fill a cell black, right-click to mark a cell as empty',
+      'A clue of "3 2" means a group of 3 filled cells, a gap, then a group of 2',
+      'Complete the hidden image to solve the puzzle',
+      'Use the X marks to track cells you know must be empty',
+    ],
+    tips: [
+      'Start with rows or columns that have the largest clue numbers — they give the most information',
+      'Use X marks to track cells you know must be empty',
+      'If a row clue adds up to the row width, every cell in that row is filled',
+    ],
+    thumbnail: '/thumbnails/nonogram.webp',
+    gameUrl: '/games/nonogram',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-06-03',
+    tags: ['nonogram', 'picross', 'puzzle', 'logic', 'pixel'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]

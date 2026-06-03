@@ -17,7 +17,8 @@
       "Bash(npm install *)",
       "Bash(curl *)",
       "Bash(npm run *)",
-      "Bash(echo \"PID: $!\")"
+      "Bash(echo \"PID: $!\")",
+      "Bash(awk \"/id: 'nonogram'/,/allowFullscreen/\" data/games.ts)"
     ]
   }
 }
