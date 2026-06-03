@@ -1,6 +1,9 @@
-export type PuzzleType = 'sequence' | 'pattern' | 'logic' | 'oddoneout' | 'rebus' | 'spatial'
+export type PuzzleType =
+  'sequence' | 'pattern' | 'logic' |
+  'oddoneout' | 'rebus' | 'spatial' |
+  'emojidecoder'
 
-export type PuzzleMode = 'classic' | 'speedrun' | 'daily'
+export type PuzzleMode = 'classic' | 'speedrun'
 
 export type PuzzleDifficulty = 'easy' | 'medium' | 'hard'
 
@@ -68,6 +71,17 @@ export interface SpatialPuzzle {
   shapeDescription: string
 }
 
+export interface EmojiDecoderPuzzle {
+  type: 'emojidecoder'
+  id: string
+  emojis: string[]
+  category: string
+  options: string[]
+  answer: string
+  explanation: string
+  difficulty: PuzzleDifficulty
+}
+
 export type AnyPuzzle =
   | SequencePuzzle
   | PatternPuzzle
@@ -75,6 +89,7 @@ export type AnyPuzzle =
   | OddOneOutPuzzle
   | RebusPuzzle
   | SpatialPuzzle
+  | EmojiDecoderPuzzle
 
 export interface PuzzleResult {
   puzzleId: string

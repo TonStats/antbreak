@@ -1,6 +1,6 @@
 import type {
   SequencePuzzle, LogicPuzzle, OddOneOutPuzzle,
-  RebusPuzzle, SpatialPuzzle, AnyPuzzle, PuzzleDifficulty, PuzzleType,
+  RebusPuzzle, SpatialPuzzle, EmojiDecoderPuzzle, AnyPuzzle, PuzzleDifficulty, PuzzleType,
 } from '../types/puzzle'
 
 // ─── Sequence Puzzles (20: 7 easy, 7 medium, 6 hard) ─────────────────────────
@@ -777,6 +777,374 @@ export const SPATIAL_PUZZLES: SpatialPuzzle[] = [
   },
 ]
 
+// ─── Emoji Decoder Puzzles (40: 12 easy, 16 medium, 12 hard) ─────────────────
+
+export const EMOJI_DECODER_PUZZLES: EmojiDecoderPuzzle[] = [
+  // Easy — famous movies
+  {
+    type: 'emojidecoder', id: 'ed1',
+    emojis: ['🦁', '👑'],
+    category: 'movies',
+    options: ['The Lion King', 'Brave', 'Madagascar', 'Jungle Book'],
+    answer: 'The Lion King',
+    explanation: '🦁 Lion + 👑 Crown = The Lion King',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed2',
+    emojis: ['🕷️', '🧑'],
+    category: 'movies',
+    options: ['Spider-Man', 'Batman', 'Ant-Man', 'Black Panther'],
+    answer: 'Spider-Man',
+    explanation: '🕷️ Spider + 🧑 Man = Spider-Man',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed3',
+    emojis: ['❄️', '👸'],
+    category: 'movies',
+    options: ['Cinderella', 'Frozen', 'Snow White', 'Tangled'],
+    answer: 'Frozen',
+    explanation: '❄️ Ice + 👸 Princess = Frozen',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed4',
+    emojis: ['🚗', '⚡', '95'],
+    category: 'movies',
+    options: ['Fast and Furious', 'Cars', 'Turbo', 'Need for Speed'],
+    answer: 'Cars',
+    explanation: '🚗 Car + ⚡ Lightning + 95 = Lightning McQueen from Cars',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed5',
+    emojis: ['🐟', '🔍'],
+    category: 'movies',
+    options: ['Finding Nemo', 'Free Willy', 'Shark Tale', 'The Little Mermaid'],
+    answer: 'Finding Nemo',
+    explanation: '🐟 Fish + 🔍 Finding = Finding Nemo',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed6',
+    emojis: ['🧙', '⚡', '📚'],
+    category: 'movies',
+    options: ['The Hobbit', 'Merlin', 'Harry Potter', 'Doctor Strange'],
+    answer: 'Harry Potter',
+    explanation: '🧙 Wizard + ⚡ Lightning bolt scar + 📚 Books = Harry Potter',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed7',
+    emojis: ['🍫', '🏭'],
+    category: 'movies',
+    options: ['Willy Wonka', 'Charlie and the Chocolate Factory', 'Hershey', 'The Sweet Factory'],
+    answer: 'Charlie and the Chocolate Factory',
+    explanation: '🍫 Chocolate + 🏭 Factory = Charlie and the Chocolate Factory',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed8',
+    emojis: ['🦈', '🎵'],
+    category: 'songs',
+    options: ['Jaws Theme', 'Baby Shark', 'Ocean Song', 'The Shark Dance'],
+    answer: 'Baby Shark',
+    explanation: '🦈 Shark + 🎵 Music = Baby Shark',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed9',
+    emojis: ['🌪️', '🏠', '🐕'],
+    category: 'movies',
+    options: ['Twister', 'Homeward Bound', 'The Wizard of Oz', 'Cujo'],
+    answer: 'The Wizard of Oz',
+    explanation: '🌪️ Tornado + 🏠 House + 🐕 Toto = The Wizard of Oz',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed10',
+    emojis: ['🚢', '❄️', '💑'],
+    category: 'movies',
+    options: ['The Poseidon Adventure', 'Titanic', 'Frozen', 'A Love Affair'],
+    answer: 'Titanic',
+    explanation: '🚢 Ship + ❄️ Iceberg + 💑 Couple = Titanic',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed11',
+    emojis: ['👻', '🏚️'],
+    category: 'movies',
+    options: ['Ghostbusters', 'Casper', 'Haunted House', 'Paranormal Activity'],
+    answer: 'Casper',
+    explanation: '👻 Friendly Ghost + 🏚️ Old House = Casper',
+    difficulty: 'easy',
+  },
+  {
+    type: 'emojidecoder', id: 'ed12',
+    emojis: ['🦸', '🦸‍♀️', '⚡'],
+    category: 'movies',
+    options: ['Justice League', 'The Incredibles', 'Avengers', 'X-Men'],
+    answer: 'The Incredibles',
+    explanation: '🦸 Super Dad + 🦸‍♀️ Super Mum + ⚡ Powers = The Incredibles',
+    difficulty: 'easy',
+  },
+  // Medium — movies, shows, phrases, songs
+  {
+    type: 'emojidecoder', id: 'ed13',
+    emojis: ['💍', '🌋', '🧙'],
+    category: 'movies',
+    options: ['Game of Thrones', 'Lord of the Rings', 'The Hobbit', 'Merlin'],
+    answer: 'Lord of the Rings',
+    explanation: '💍 The One Ring + 🌋 Mount Doom + 🧙 Gandalf = Lord of the Rings',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed14',
+    emojis: ['🦁', '🧲', '🤖'],
+    category: 'movies',
+    options: ['Transformers', 'Madagascar', 'Iron Man', 'The Jungle Book'],
+    answer: 'Iron Man',
+    explanation: '🦁 Courage + 🧲 Iron + 🤖 Suit = Iron Man',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed15',
+    emojis: ['🎸', '🎵', '👦'],
+    category: 'movies',
+    options: ['August Rush', 'Coco', 'School of Rock', 'Sing'],
+    answer: 'Coco',
+    explanation: '🎸 Guitar + 🎵 Music + 👦 Young boy = Coco',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed16',
+    emojis: ['🏃', '💨', '🌎'],
+    category: 'movies',
+    options: ['Run', 'Around the World', 'Forrest Gump', 'Speed'],
+    answer: 'Forrest Gump',
+    explanation: '🏃 Running + 💨 Fast + 🌎 Across America = Forrest Gump',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed17',
+    emojis: ['🐝', '🍯', '🌲'],
+    category: 'movies',
+    options: ['A Bug\'s Life', 'Bambi', 'Winnie the Pooh', 'Bee Movie'],
+    answer: 'Winnie the Pooh',
+    explanation: '🐝 Bee + 🍯 Honey + 🌲 Hundred Acre Wood = Winnie the Pooh',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed18',
+    emojis: ['🃏', '😄', '😢'],
+    category: 'movies',
+    options: ['Joker', 'Inside Out', 'The Mask', 'Clown'],
+    answer: 'Joker',
+    explanation: '🃏 Playing card joker + 😄😢 Laugh/cry masks = Joker',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed19',
+    emojis: ['🌙', '🧛', '❤️'],
+    category: 'movies',
+    options: ['Dracula', 'Twilight', 'Interview with the Vampire', 'What We Do in the Shadows'],
+    answer: 'Twilight',
+    explanation: '🌙 Night + 🧛 Vampire + ❤️ Love story = Twilight',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed20',
+    emojis: ['🎪', '🐘', '🎩'],
+    category: 'movies',
+    options: ['Barnum', 'Dumbo', 'The Greatest Showman', 'Circus'],
+    answer: 'Dumbo',
+    explanation: '🎪 Circus + 🐘 Elephant + 🎩 Magic hat = Dumbo',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed21',
+    emojis: ['🌍', '🔭', '👽'],
+    category: 'movies',
+    options: ['Interstellar', 'ET the Extra-Terrestrial', 'Contact', 'Men in Black'],
+    answer: 'ET the Extra-Terrestrial',
+    explanation: '🌍 Earth + 🔭 Looking at stars + 👽 Alien = ET',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed22',
+    emojis: ['🧊', '⛏️', '💎'],
+    category: 'shows',
+    options: ['Game of Thrones', 'Minecraft', 'Ice Road Truckers', 'Diamond Rush'],
+    answer: 'Minecraft',
+    explanation: '🧊 Blocks + ⛏️ Mining + 💎 Diamonds = Minecraft',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed23',
+    emojis: ['🍕', '🗽', '👨‍👩‍👧‍👦'],
+    category: 'shows',
+    options: ['Modern Family', 'Friends', 'Seinfeld', 'How I Met Your Mother'],
+    answer: 'Friends',
+    explanation: '🍕 Food + 🗽 New York + 👨‍👩‍👧‍👦 Group of friends = Friends',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed24',
+    emojis: ['⚖️', '👩‍⚖️', '🔍'],
+    category: 'shows',
+    options: ['Judge Judy', 'Law and Order', 'Suits', 'Boston Legal'],
+    answer: 'Law and Order',
+    explanation: '⚖️ Law + 👩‍⚖️ Judge + 🔍 Investigation = Law and Order',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed25',
+    emojis: ['🏔️', '🧗', '⛺'],
+    category: 'phrases',
+    options: ['Reach for the Stars', 'On Top of the World', 'The Climb', 'High Hopes'],
+    answer: 'On Top of the World',
+    explanation: '🏔️ Mountain top + 🧗 Climbing + ⛺ Summit = On Top of the World',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed26',
+    emojis: ['🌧️', '🌈', '☀️'],
+    category: 'phrases',
+    options: ['Every Cloud has a Silver Lining', 'April Showers', 'Rainbow Connection', 'After the Storm'],
+    answer: 'Every Cloud has a Silver Lining',
+    explanation: '🌧️ Rain + 🌈 Rainbow + ☀️ Sun after storm = Silver lining',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed27',
+    emojis: ['🐜', '🎤', '🎶'],
+    category: 'songs',
+    options: ['Bug Music', 'Creep', 'Ant Music', 'Buggy Beats'],
+    answer: 'Ant Music',
+    explanation: '🐜 Ant + 🎤 Music + 🎶 = Ant Music by Adam and the Ants',
+    difficulty: 'medium',
+  },
+  {
+    type: 'emojidecoder', id: 'ed28',
+    emojis: ['🌹', '💀', '💃'],
+    category: 'movies',
+    options: ['La Vie en Rose', 'Beauty and the Beast', 'Moulin Rouge', 'Romeo and Juliet'],
+    answer: 'Beauty and the Beast',
+    explanation: '🌹 Rose + 💀 Beast curse + 💃 Dance = Beauty and the Beast',
+    difficulty: 'medium',
+  },
+  // Hard — tricky combinations
+  {
+    type: 'emojidecoder', id: 'ed29',
+    emojis: ['🍊', '🕐', '🔪'],
+    category: 'movies',
+    options: ['Kill Bill', 'A Clockwork Orange', 'Pulp Fiction', 'The Shining'],
+    answer: 'A Clockwork Orange',
+    explanation: '🍊 Orange + 🕐 Clockwork mechanism + 🔪 Violence = A Clockwork Orange',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed30',
+    emojis: ['🎈', '🤡', '🚸'],
+    category: 'movies',
+    options: ['Clown', 'It', 'Pennywise', 'Scary Movie'],
+    answer: 'It',
+    explanation: '🎈 Red balloon + 🤡 Pennywise + 🚸 Children = It',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed31',
+    emojis: ['🐺', '🌕', '🩸'],
+    category: 'movies',
+    options: ['The Howling', 'American Werewolf in London', 'Twilight', 'An American Werewolf'],
+    answer: 'American Werewolf in London',
+    explanation: '🐺 Wolf + 🌕 Full moon + 🩸 Horror = American Werewolf in London',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed32',
+    emojis: ['🔵', '💊', '🕶️'],
+    category: 'movies',
+    options: ['The Matrix', 'Limitless', 'Lucy', 'Inception'],
+    answer: 'The Matrix',
+    explanation: '🔵 Blue pill (choice) + 💊 Red pill + 🕶️ Neo sunglasses = The Matrix',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed33',
+    emojis: ['🎠', '🏰', '😱'],
+    category: 'movies',
+    options: ['Haunted Mansion', 'Something Wicked This Way Comes', 'It', 'Carousel of Terror'],
+    answer: 'Something Wicked This Way Comes',
+    explanation: '🎠 Carousel + 🏰 Dark carnival + 😱 Terror = Something Wicked',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed34',
+    emojis: ['🔑', '🏨', '👁️'],
+    category: 'movies',
+    options: ['1408', 'The Shining', 'Psycho', 'Room 237'],
+    answer: 'The Shining',
+    explanation: '🔑 Key + 🏨 Overlook Hotel + 👁️ All work and no play = The Shining',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed35',
+    emojis: ['🦋', '🧠', '🔇'],
+    category: 'movies',
+    options: ['Silence of the Lambs', 'Butterfly Effect', 'Memento', 'Black Swan'],
+    answer: 'Silence of the Lambs',
+    explanation: '🦋 Moth on poster + 🧠 Hannibal Lecter + 🔇 Silence = Silence of the Lambs',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed36',
+    emojis: ['💼', '🌂', '🕵️'],
+    category: 'shows',
+    options: ['Sherlock', 'Umbrella Academy', 'Peaky Blinders', 'Men in Black'],
+    answer: 'Umbrella Academy',
+    explanation: '💼 Briefcase + 🌂 Umbrella + 🕵️ Secret agents = Umbrella Academy',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed37',
+    emojis: ['🏜️', '🧪', '💰'],
+    category: 'shows',
+    options: ['Breaking Bad', 'Better Call Saul', 'Narcos', 'The Wire'],
+    answer: 'Breaking Bad',
+    explanation: '🏜️ New Mexico desert + 🧪 Chemistry + 💰 Drug money = Breaking Bad',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed38',
+    emojis: ['🎭', '🩸', '🔪'],
+    category: 'shows',
+    options: ['Dexter', 'Hannibal', 'Criminal Minds', 'True Blood'],
+    answer: 'Dexter',
+    explanation: '🎭 Mask/pretense + 🩸 Blood + 🔪 Serial killer = Dexter',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed39',
+    emojis: ['⌛', '✈️', '🔄'],
+    category: 'shows',
+    options: ['Lost', 'Dark', 'Fringe', '12 Monkeys'],
+    answer: 'Dark',
+    explanation: '⌛ Time + ✈️ Loop + 🔄 Cycle = Dark (Netflix time travel)',
+    difficulty: 'hard',
+  },
+  {
+    type: 'emojidecoder', id: 'ed40',
+    emojis: ['🧩', '🏠', '🔢'],
+    category: 'shows',
+    options: ['Squid Game', 'The Cube', 'Numbered', 'Puzzle House'],
+    answer: 'Squid Game',
+    explanation: '🧩 Games + 🏠 Arena + 🔢 Players numbered = Squid Game',
+    difficulty: 'hard',
+  },
+]
+
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
 export function getPuzzles(count: number, difficulty: PuzzleDifficulty): AnyPuzzle[] {
@@ -786,49 +1154,25 @@ export function getPuzzles(count: number, difficulty: PuzzleDifficulty): AnyPuzz
     ...ODD_ONE_OUT_PUZZLES,
     ...REBUS_PUZZLES,
     ...SPATIAL_PUZZLES,
+    ...EMOJI_DECODER_PUZZLES,
   ]
-  const byDiff = all.filter(p => p.difficulty === difficulty)
+  const byDiff  = all.filter(p => p.difficulty === difficulty)
   const shuffled = [...byDiff].sort(() => Math.random() - 0.5)
 
-  const types: PuzzleType[] = ['sequence', 'logic', 'oddoneout', 'rebus', 'spatial']
-  const byType: Partial<Record<PuzzleType, AnyPuzzle[]>> = {}
-  for (const t of types) {
-    byType[t] = shuffled.filter(p => p.type === t)
-  }
-
+  const types: PuzzleType[] = ['sequence', 'logic', 'oddoneout', 'rebus', 'spatial', 'emojidecoder']
   const result: AnyPuzzle[] = []
-  let round = 0
-  while (result.length < count) {
-    let addedThisRound = false
+  let added    = 0
+  let attempts = 0
+  while (added < count && attempts < shuffled.length * 2) {
     for (const t of types) {
-      if (result.length >= count) break
-      const pool = byType[t]!
-      if (round < pool.length) {
-        result.push(pool[round])
-        addedThisRound = true
+      const next = shuffled.find(p => p.type === t && !result.includes(p))
+      if (next) {
+        result.push(next)
+        added++
+        if (added >= count) break
       }
     }
-    round++
-    if (!addedThisRound) break
-  }
-  return result
-}
-
-export function getDailyPuzzles(): AnyPuzzle[] {
-  const day = new Date().getDate() - 1
-  const all: AnyPuzzle[] = [
-    ...SEQUENCE_PUZZLES,
-    ...LOGIC_PUZZLES,
-    ...ODD_ONE_OUT_PUZZLES,
-    ...REBUS_PUZZLES,
-    ...SPATIAL_PUZZLES,
-  ]
-  const seed = day * 7
-  const result: AnyPuzzle[] = []
-  const types: PuzzleType[] = ['sequence', 'logic', 'oddoneout', 'rebus', 'spatial']
-  for (let i = 0; i < types.length; i++) {
-    const pool = all.filter(p => p.type === types[i])
-    result.push(pool[(seed + i * 3) % pool.length])
+    attempts++
   }
   return result
 }
