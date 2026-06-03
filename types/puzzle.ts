@@ -1,7 +1,5 @@
 export type PuzzleType =
-  'sequence' | 'pattern' | 'logic' |
-  'oddoneout' | 'rebus' | 'spatial' |
-  'emojidecoder'
+  'sequence' | 'deduction' | 'emojipuzzle' | 'spatial'
 
 export type PuzzleMode = 'classic' | 'speedrun'
 
@@ -17,18 +15,9 @@ export interface SequencePuzzle {
   difficulty: PuzzleDifficulty
 }
 
-export interface PatternPuzzle {
-  type: 'pattern'
-  id: string
-  grid: string[][]
-  options: string[]
-  answer: string
-  explanation: string
-  difficulty: PuzzleDifficulty
-}
-
 export interface LogicPuzzle {
-  type: 'logic'
+  type: 'deduction'
+  subtype: 'logic'
   id: string
   question: string
   clues: string[]
@@ -39,22 +28,10 @@ export interface LogicPuzzle {
 }
 
 export interface OddOneOutPuzzle {
-  type: 'oddoneout'
+  type: 'deduction'
+  subtype: 'oddoneout'
   id: string
   items: string[]
-  answer: string
-  explanation: string
-  difficulty: PuzzleDifficulty
-}
-
-export interface RebusPuzzle {
-  type: 'rebus'
-  id: string
-  parts: Array<{
-    content: string
-    type: 'emoji' | 'text' | 'symbol'
-  }>
-  options: string[]
   answer: string
   explanation: string
   difficulty: PuzzleDifficulty
@@ -71,25 +48,28 @@ export interface SpatialPuzzle {
   shapeDescription: string
 }
 
-export interface EmojiDecoderPuzzle {
-  type: 'emojidecoder'
+export interface EmojiPuzzlePuzzle {
+  type: 'emojipuzzle'
   id: string
-  emojis: string[]
-  category: string
-  options: string[]
+  parts: Array<{
+    content: string
+    type: 'emoji' | 'text' | 'symbol'
+  }>
   answer: string
+  alternateAnswers: string[]
   explanation: string
+  hint1Options: string[]
+  hint2Options: string[]
   difficulty: PuzzleDifficulty
+  style: 'rebus' | 'symbolic'
 }
 
 export type AnyPuzzle =
   | SequencePuzzle
-  | PatternPuzzle
   | LogicPuzzle
   | OddOneOutPuzzle
-  | RebusPuzzle
   | SpatialPuzzle
-  | EmojiDecoderPuzzle
+  | EmojiPuzzlePuzzle
 
 export interface PuzzleResult {
   puzzleId: string

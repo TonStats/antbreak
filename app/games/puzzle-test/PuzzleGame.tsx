@@ -4,29 +4,31 @@ import { useState, useEffect, useRef } from 'react'
 import { Grid2x2, Maximize2, Minimize2, X } from 'lucide-react'
 import type {
   AnyPuzzle, PuzzleMode, PuzzleDifficulty, PuzzleResult,
-  SequencePuzzle, LogicPuzzle, OddOneOutPuzzle, RebusPuzzle, SpatialPuzzle,
-  EmojiDecoderPuzzle,
+  SequencePuzzle, LogicPuzzle, OddOneOutPuzzle, SpatialPuzzle,
+  EmojiPuzzlePuzzle,
 } from '@/types/puzzle'
 import {
   getPuzzles,
-  SEQUENCE_PUZZLES, LOGIC_PUZZLES, ODD_ONE_OUT_PUZZLES,
-  REBUS_PUZZLES, SPATIAL_PUZZLES, EMOJI_DECODER_PUZZLES,
+  SEQUENCE_PUZZLES, DEDUCTION_PUZZLES,
+  SPATIAL_PUZZLES, EMOJI_PUZZLE_PUZZLES,
 } from '@/data/puzzleData'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 type Stage = 'setup' | 'playing' | 'results'
 
-const CLASSIC_COUNT    = 15
-const SPEEDRUN_COUNT   = 10
-const POINTS_CORRECT   = 5
-const POINTS_WITH_HINT = 3
-const SPEED_SECONDS    = 20
-const ADVANCE_DELAY    = 2000
+const CLASSIC_COUNT          = 15
+const SPEEDRUN_COUNT         = 10
+const POINTS_CORRECT_NO_HINT = 5
+const POINTS_CORRECT_HINT1   = 3
+const POINTS_CORRECT_HINT2   = 2
+const HINT_COST              = 5
+const SPEED_SECONDS          = 20
+const ADVANCE_DELAY          = 2000
 
 const MODES: { id: PuzzleMode; icon: string; name: string; tagline: string }[] = [
-  { id: 'classic',  icon: '🧩', name: 'Classic',   tagline: 'Sequence · Logic · Odd One Out · Rebus · Spatial · Emoji Decoder' },
-  { id: 'speedrun', icon: '⚡', name: 'Speed Run', tagline: 'All 6 types · 20 seconds each'                                    },
+  { id: 'classic',  icon: '🧩', name: 'Classic',   tagline: 'Sequence · Deduction · Emoji Puzzle · Spatial' },
+  { id: 'speedrun', icon: '⚡', name: 'Speed Run', tagline: 'All 4 types · 20 seconds each'                  },
 ]
 
 const DIFFICULTIES: { id: PuzzleDifficulty; label: string; active: string }[] = [
@@ -35,68 +37,56 @@ const DIFFICULTIES: { id: PuzzleDifficulty; label: string; active: string }[] = 
   { id: 'hard',   label: 'Hard',   active: 'bg-rose-600 border-rose-600 text-white'        },
 ]
 
-const PUZZLE_TYPE_BADGES = [
-  { icon: '🔢', label: 'Seq',     bg: 'bg-blue-500/20',   text: 'text-blue-300',   border: 'border-blue-500/30'   },
-  { icon: '🧠', label: 'Logic',   bg: 'bg-purple-500/20', text: 'text-purple-300', border: 'border-purple-500/30' },
-  { icon: '🎯', label: 'Odd',     bg: 'bg-green-500/20',  text: 'text-green-300',  border: 'border-green-500/30'  },
-  { icon: '🔤', label: 'Rebus',   bg: 'bg-cyan-500/20',   text: 'text-cyan-300',   border: 'border-cyan-500/30'   },
-  { icon: '🔷', label: 'Spatial', bg: 'bg-pink-500/20',   text: 'text-pink-300',   border: 'border-pink-500/30'   },
-  { icon: '😀', label: 'Emoji',   bg: 'bg-yellow-500/20', text: 'text-yellow-300', border: 'border-yellow-500/30' },
-]
-
 const CATEGORY_OPTIONS = [
-  { id: 'all',          icon: '',   label: 'All Types',     selBg: 'bg-orange-500',  selText: 'text-white',      selBorder: 'border-orange-400' },
-  { id: 'sequence',     icon: '🔢', label: 'Sequence',      selBg: 'bg-blue-600',    selText: 'text-white',      selBorder: 'border-blue-500'   },
-  { id: 'logic',        icon: '🧠', label: 'Logic',         selBg: 'bg-purple-600',  selText: 'text-white',      selBorder: 'border-purple-500' },
-  { id: 'oddoneout',    icon: '🎯', label: 'Odd One Out',   selBg: 'bg-green-600',   selText: 'text-white',      selBorder: 'border-green-500'  },
-  { id: 'rebus',        icon: '🔤', label: 'Rebus',         selBg: 'bg-cyan-600',    selText: 'text-white',      selBorder: 'border-cyan-500'   },
-  { id: 'spatial',      icon: '🔷', label: 'Spatial',       selBg: 'bg-pink-600',    selText: 'text-white',      selBorder: 'border-pink-500'   },
-  { id: 'emojidecoder', icon: '😀', label: 'Emoji Decoder', selBg: 'bg-yellow-500',  selText: 'text-yellow-900', selBorder: 'border-yellow-400' },
+  { id: 'all',         icon: '',   label: 'All Types',    selBg: 'bg-orange-500', selText: 'text-white',      selBorder: 'border-orange-400' },
+  { id: 'sequence',    icon: '🔢', label: 'Sequence',     selBg: 'bg-blue-600',   selText: 'text-white',      selBorder: 'border-blue-500'   },
+  { id: 'deduction',   icon: '🧠', label: 'Deduction',    selBg: 'bg-purple-600', selText: 'text-white',      selBorder: 'border-purple-500' },
+  { id: 'emojipuzzle', icon: '😀', label: 'Emoji Puzzle', selBg: 'bg-yellow-500', selText: 'text-yellow-900', selBorder: 'border-yellow-400' },
+  { id: 'spatial',     icon: '🔷', label: 'Spatial',      selBg: 'bg-pink-600',   selText: 'text-white',      selBorder: 'border-pink-500'   },
 ] as const
 
 const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
-  sequence:     { icon: '🔢', label: 'Number Sequence' },
-  logic:        { icon: '🧠', label: 'Logic Grid'      },
-  oddoneout:    { icon: '🎯', label: 'Odd One Out'      },
-  rebus:        { icon: '🔤', label: 'Rebus'            },
-  spatial:      { icon: '🔷', label: 'Spatial'          },
-  emojidecoder: { icon: '😀', label: 'Emoji Decoder'   },
+  sequence:    { icon: '🔢', label: 'Number Sequence' },
+  deduction:   { icon: '🧠', label: 'Deduction'       },
+  emojipuzzle: { icon: '😀', label: 'Emoji Puzzle'    },
+  spatial:     { icon: '🔷', label: 'Spatial'         },
 }
 
 const TYPE_BADGE_STYLES: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  sequence:     { bg: 'bg-blue-500/20',   text: 'text-blue-300',   border: 'border-blue-500/40',   label: '🔢 NUMBER SEQUENCE' },
-  logic:        { bg: 'bg-purple-500/20', text: 'text-purple-300', border: 'border-purple-500/40', label: '🧠 LOGIC PUZZLE'    },
-  oddoneout:    { bg: 'bg-green-500/20',  text: 'text-green-300',  border: 'border-green-500/40',  label: '🎯 ODD ONE OUT'     },
-  rebus:        { bg: 'bg-cyan-500/20',   text: 'text-cyan-300',   border: 'border-cyan-500/40',   label: '🔤 REBUS PUZZLE'    },
-  spatial:      { bg: 'bg-pink-500/20',   text: 'text-pink-300',   border: 'border-pink-500/40',   label: '🔷 SPATIAL PUZZLE'  },
-  emojidecoder: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', border: 'border-yellow-500/40', label: '😀 EMOJI DECODER'   },
+  sequence:    { bg: 'bg-blue-500/20',   text: 'text-blue-300',   border: 'border-blue-500/40',   label: '🔢 NUMBER SEQUENCE' },
+  deduction:   { bg: 'bg-purple-500/20', text: 'text-purple-300', border: 'border-purple-500/40', label: '🧠 DEDUCTION'       },
+  emojipuzzle: { bg: 'bg-yellow-500/20', text: 'text-yellow-300', border: 'border-yellow-500/40', label: '😀 EMOJI PUZZLE'    },
+  spatial:     { bg: 'bg-pink-500/20',   text: 'text-pink-300',   border: 'border-pink-500/40',   label: '🔷 SPATIAL PUZZLE'  },
 }
 
 const TYPE_HINTS: Record<string, string> = {
-  sequence:  'Look at the differences or ratios between consecutive terms — does the gap grow, shrink, or stay fixed?',
-  logic:     'Work through each clue one by one and cross off options that cannot be true.',
-  oddoneout: 'Try different categories — function, origin, spelling, shape, or hidden property.',
-  rebus:     'Say each image\'s name out loud and listen for the sounds, not the spelling.',
-  spatial:   'Close your eyes and visualise rotating or transforming the shape step by step.',
+  sequence:    'Look at the differences or ratios between consecutive terms — does the gap grow, shrink, or stay fixed?',
+  deduction:   'Work through each clue one by one, or try different category groupings — function, origin, spelling, or hidden property.',
+  emojipuzzle: "Say each emoji's name out loud and think about what word or phrase it sounds like.",
+  spatial:     'Close your eyes and visualise rotating or transforming the shape step by step.',
+}
+
+const INPUT_PLACEHOLDERS: Record<string, string> = {
+  sequence:    'Type the missing number...',
+  deduction:   'Type your answer...',
+  emojipuzzle: 'Type what this represents...',
+  spatial:     'Type your answer...',
 }
 
 const HOW_TO_GUIDE = [
-  { label: 'Classic',        body: 'Work through 15 puzzles with no time limit. Five puzzle types rotate so every question feels fresh.' },
-  { label: 'Speed Run',      body: '10 puzzles, 20 seconds each. Answer quickly — time out and the question auto-advances.' },
-  { label: 'Hints',          body: 'Each puzzle has a hint. Use it if stuck — it reduces your score from 5 to 3 points.' },
-  { label: 'Types',          body: 'Sequence: find the pattern. Logic: deduce from clues. Odd One Out: spot the misfit. Rebus: decode the pictures. Spatial: visualise shapes. Emoji Decoder: decode emoji combos into movies, songs, or phrases.' },
+  { label: 'Classic',   body: 'Work through 15 puzzles with no time limit. Five puzzle types rotate so every question feels fresh.' },
+  { label: 'Speed Run', body: '10 puzzles, 20 seconds each. Answer quickly — time out and the question auto-advances.' },
+  { label: 'Hints',     body: 'Each puzzle has a hint. Use it if stuck — it reduces your score from 5 to 3 points.' },
+  { label: 'Types',     body: 'Sequence: find the pattern. Deduction: deduce from clues or spot the misfit. Emoji Puzzle: decode picture rebuses or emoji combos. Spatial: visualise shapes.' },
 ]
 
 const RESULTS_GUIDE = [
   { icon: '🔢', label: 'Sequences',    body: 'Find the pattern in numbers or letters to identify what comes next.' },
-  { icon: '🧠', label: 'Logic',        body: 'Use the given clues to deduce the correct answer logically.' },
-  { icon: '🎯', label: 'Odd One Out',  body: 'Find the item that does not share the same connection as the others.' },
-  { icon: '🔤', label: 'Rebus',        body: 'Decode the combination of images and symbols as words or phrases.' },
+  { icon: '🧠', label: 'Deduction',    body: 'Use clues to reason logically, or identify the item that doesn\'t share the same connection.' },
+  { icon: '😀', label: 'Emoji Puzzle', body: "Decode the emoji sequence — say each emoji's name to find the hidden word or phrase." },
   { icon: '🔷', label: 'Spatial',      body: 'Visualise shapes, rotations and patterns in your mind to answer.' },
-  { icon: '😀', label: 'Emoji Decoder',body: 'Decode the emoji sequence into the movie, song, show, or phrase it represents.' },
 ]
 
-// Pre-computed confetti (orange-themed, deterministic — no Math.random in render)
 const CONFETTI_PIECES = Array.from({ length: 48 }, (_, i) => ({
   left:  (i * 37 + 11) % 100,
   delay: (i * 0.13) % 1.8,
@@ -126,41 +116,27 @@ function getGrade(pct: number): { emoji: string; title: string } {
   return               { emoji: '🌱', title: 'Keep Practising' }
 }
 
-function generateSequenceOptions(answer: string): string[] {
-  const n = Number(answer)
-  if (!isNaN(n) && Number.isInteger(n)) {
-    const abs = Math.abs(n)
-    const d = abs <= 10 ? 1 : abs <= 50 ? 3 : Math.ceil(abs * 0.08)
-    const candidates = [n - d * 2, n - d, n + d, n + d * 2].filter(v => v > 0 && v !== n)
-    const wrong = [...new Set(candidates)].slice(0, 3).map(String)
-    const all = [...wrong, answer]
-    for (let i = all.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[all[i], all[j]] = [all[j], all[i]]
-    }
-    return all.slice(0, 4)
+function checkTextAnswer(input: string, puzzle: AnyPuzzle): boolean {
+  const clean = (s: string) =>
+    s.toLowerCase()
+     .trim()
+     .replace(/^(a |an |the )/, '')
+     .replace(/[^a-z0-9]/g, '')
+  const cleaned = clean(input)
+  if (clean(puzzle.answer) === cleaned) return true
+  if ('alternateAnswers' in puzzle) {
+    const alts = (puzzle as EmojiPuzzlePuzzle).alternateAnswers
+    if (alts.some(a => clean(a) === cleaned)) return true
   }
-  const code = answer.charCodeAt(0)
-  const opts: string[] = []
-  for (const o of [-3, -2, -1, 1, 2, 3]) {
-    const c = code + o
-    if (c >= 65 && c <= 90) opts.push(String.fromCharCode(c))
-    if (opts.length === 3) break
-  }
-  opts.push(answer)
-  for (let i = opts.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[opts[i], opts[j]] = [opts[j], opts[i]]
-  }
-  return opts.slice(0, 4)
+  return false
 }
 
 function getQuestionText(p: AnyPuzzle): string {
-  if (p.type === 'sequence')  return `Sequence: ${(p as SequencePuzzle).sequence.join(' → ')}`
-  if (p.type === 'logic')     return (p as LogicPuzzle).question
-  if (p.type === 'oddoneout') return `Odd one out: ${(p as OddOneOutPuzzle).items.join(', ')}`
-  if (p.type === 'rebus')     return `Rebus: ${(p as RebusPuzzle).parts.map(pt => pt.content).join(' ')}`
-  if (p.type === 'spatial')   return (p as SpatialPuzzle).question
+  if (p.type === 'sequence')                                 return `Sequence: ${(p as SequencePuzzle).sequence.join(' → ')}`
+  if (p.type === 'deduction' && p.subtype === 'logic')       return (p as LogicPuzzle).question
+  if (p.type === 'deduction' && p.subtype === 'oddoneout')   return `Odd one out: ${(p as OddOneOutPuzzle).items.join(', ')}`
+  if (p.type === 'emojipuzzle')                              return (p as EmojiPuzzlePuzzle).parts.map(pt => pt.content).join(' ')
+  if (p.type === 'spatial')                                  return (p as SpatialPuzzle).question
   return ''
 }
 
@@ -172,16 +148,38 @@ function getFilteredPuzzles(
   if (category === 'all') return getPuzzles(count, difficulty)
   const pool: AnyPuzzle[] = [
     ...SEQUENCE_PUZZLES,
-    ...LOGIC_PUZZLES,
-    ...ODD_ONE_OUT_PUZZLES,
-    ...REBUS_PUZZLES,
+    ...DEDUCTION_PUZZLES,
+    ...EMOJI_PUZZLE_PUZZLES,
     ...SPATIAL_PUZZLES,
-    ...EMOJI_DECODER_PUZZLES,
   ]
   return pool
     .filter(p => p.type === category && p.difficulty === difficulty)
     .sort(() => Math.random() - 0.5)
     .slice(0, count)
+}
+
+function generateDistractors(answer: string, type: string): string[] {
+  if (type === 'sequence') {
+    const num = parseInt(answer)
+    if (!isNaN(num)) {
+      return [String(num + 2), String(num - 2), String(num * 2)]
+    }
+  }
+  return ['Option B', 'Option C', 'Option D']
+}
+
+function getHintOptions(puzzle: AnyPuzzle, hintLevel: 1 | 2): string[] {
+  if (puzzle.type === 'emojipuzzle') {
+    const ep = puzzle as EmojiPuzzlePuzzle
+    if (hintLevel === 1 && ep.hint1Options.length > 0) return ep.hint1Options
+    if (hintLevel === 2 && ep.hint2Options.length > 0) return ep.hint2Options
+  }
+  const answer     = puzzle.answer
+  const distractors = generateDistractors(answer, puzzle.type)
+  if (hintLevel === 1) {
+    return [answer, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5)
+  }
+  return [answer, distractors[0]].sort(() => Math.random() - 0.5)
 }
 
 // ─── Spatial visual aid ────────────────────────────────────────────────────────
@@ -262,17 +260,20 @@ export default function PuzzleGame() {
 
   // ── Game state ─────────────────────────────────────────────────
   const [puzzles,         setPuzzles]         = useState<AnyPuzzle[]>([])
-  const [puzzleOptions,   setPuzzleOptions]   = useState<Record<string, string[]>>({})
   const [currentIdx,      setCurrentIdx]      = useState(0)
-  const [selected,        setSelected]        = useState<string | null>(null)
   const [hasAnswered,     setHasAnswered]     = useState(false)
+  const [wasCorrect,      setWasCorrect]      = useState(false)
   const [timedOut,        setTimedOut]        = useState(false)
-  const [score,           setScore]           = useState(0)
-  const [hintUsed,        setHintUsed]        = useState(false)
-  const [showHint,        setShowHint]        = useState(false)
-  const [showExplanation, setShowExplanation] = useState(false)
+  const [score,                  setScore]                  = useState(0)
+  const [sessionPoints,          setSessionPoints]          = useState(0)
+  const [hintsUsedThisQuestion,  setHintsUsedThisQuestion]  = useState(0)
+  const [shownOptions,           setShownOptions]           = useState<string[]>([])
+  const [showInsufficientPoints, setShowInsufficientPoints] = useState(false)
+  const [showExplanation,        setShowExplanation]        = useState(false)
   const [timeLeft,        setTimeLeft]        = useState(SPEED_SECONDS)
   const [results,         setResults]         = useState<PuzzleResult[]>([])
+  const [textAnswer,      setTextAnswer]      = useState('')
+  const [inputShake,      setInputShake]      = useState(false)
 
   // ── Results state ──────────────────────────────────────────────
   const [isNewPB,      setIsNewPB]      = useState(false)
@@ -280,6 +281,7 @@ export default function PuzzleGame() {
 
   // ── Refs ───────────────────────────────────────────────────────
   const cardRef    = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLInputElement>(null)
   const pbSavedRef = useRef(false)
 
   // ── Reset category when mode changes ──────────────────────────
@@ -326,11 +328,26 @@ export default function PuzzleGame() {
     if (!puzzle) return
     setTimedOut(true)
     setHasAnswered(true)
+    setWasCorrect(false)
     setResults(prev => [...prev, {
       puzzleId: puzzle.id, correct: false,
-      timeSeconds: SPEED_SECONDS, hintUsed, pointsEarned: 0,
+      timeSeconds: SPEED_SECONDS, hintUsed: hintsUsedThisQuestion > 0, pointsEarned: 0,
     }])
-  }, [timeLeft, mode, stage, hasAnswered, puzzles, currentIdx, hintUsed])
+  }, [timeLeft, mode, stage, hasAnswered, puzzles, currentIdx, hintsUsedThisQuestion])
+
+  // ── Reset input + hint state + auto-focus on new question ────
+  useEffect(() => {
+    setTextAnswer('')
+    setInputShake(false)
+    setWasCorrect(false)
+    setHintsUsedThisQuestion(0)
+    setShownOptions([])
+    setShowInsufficientPoints(false)
+    if (stage === 'playing') {
+      const t = setTimeout(() => inputRef.current?.focus(), 0)
+      return () => clearTimeout(t)
+    }
+  }, [currentIdx, stage])
 
   // ── Explanation delay (400ms) ──────────────────────────────────
   useEffect(() => {
@@ -348,11 +365,8 @@ export default function PuzzleGame() {
         setStage('results')
       } else {
         setCurrentIdx(next)
-        setSelected(null)
         setHasAnswered(false)
         setTimedOut(false)
-        setShowHint(false)
-        setHintUsed(false)
         setShowExplanation(false)
         setTimeLeft(SPEED_SECONDS)
       }
@@ -376,7 +390,7 @@ export default function PuzzleGame() {
       setBestScore(String(correctCount))
     }
 
-    const maxScore = puzzles.length * POINTS_CORRECT
+    const maxScore = puzzles.length * POINTS_CORRECT_NO_HINT
     const pct      = maxScore > 0 ? (score / maxScore) * 100 : 0
     if (pct >= 75) setShowConfetti(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -403,27 +417,24 @@ export default function PuzzleGame() {
       difficulty,
       selectedCategory,
     )
-
-    const opts: Record<string, string[]> = {}
-    for (const q of qs) {
-      if (q.type === 'sequence') opts[q.id] = generateSequenceOptions(q.answer)
-    }
-
-    setPuzzleOptions(opts)
     setPuzzles(qs)
     setCurrentIdx(0)
-    setSelected(null)
     setHasAnswered(false)
+    setWasCorrect(false)
     setTimedOut(false)
     setScore(0)
-    setHintUsed(false)
-    setShowHint(false)
+    setSessionPoints(0)
+    setHintsUsedThisQuestion(0)
+    setShownOptions([])
+    setShowInsufficientPoints(false)
     setShowExplanation(false)
     setTimeLeft(SPEED_SECONDS)
     setResults([])
     setIsNewPB(false)
     setShowConfetti(false)
     setShowHowTo(false)
+    setTextAnswer('')
+    setInputShake(false)
     pbSavedRef.current = false
     setStage('playing')
   }
@@ -431,41 +442,74 @@ export default function PuzzleGame() {
   function handleQuit() {
     setStage('setup')
     setPuzzles([])
-    setPuzzleOptions({})
     setCurrentIdx(0)
-    setSelected(null)
     setHasAnswered(false)
+    setWasCorrect(false)
     setTimedOut(false)
     setScore(0)
-    setHintUsed(false)
-    setShowHint(false)
+    setSessionPoints(0)
+    setHintsUsedThisQuestion(0)
+    setShownOptions([])
+    setShowInsufficientPoints(false)
     setShowExplanation(false)
     setTimeLeft(SPEED_SECONDS)
     setResults([])
     setIsNewPB(false)
     setShowConfetti(false)
+    setTextAnswer('')
+    setInputShake(false)
   }
 
-  function handleSelect(opt: string) {
-    if (hasAnswered) return
-    const puzzle = puzzles[currentIdx]
-    if (!puzzle) return
-    const correct = opt === puzzle.answer
-    const pts     = correct ? (hintUsed ? POINTS_WITH_HINT : POINTS_CORRECT) : 0
-    setSelected(opt)
-    setHasAnswered(true)
-    setScore(prev => prev + pts)
-    setResults(prev => [...prev, {
-      puzzleId: puzzle.id, correct,
-      timeSeconds: mode === 'speedrun' ? SPEED_SECONDS - timeLeft : 0,
-      hintUsed, pointsEarned: pts,
-    }])
+  function handleSubmitText() {
+    if (!textAnswer.trim() || hasAnswered) return
+    const p = puzzles[currentIdx]
+    if (!p) return
+
+    const correct = checkTextAnswer(textAnswer, p)
+    if (correct) {
+      const pointsEarned = hintsUsedThisQuestion === 0 ? POINTS_CORRECT_NO_HINT
+        : hintsUsedThisQuestion === 1 ? POINTS_CORRECT_HINT1
+        : POINTS_CORRECT_HINT2
+      setWasCorrect(true)
+      setHasAnswered(true)
+      setScore(prev => prev + pointsEarned)
+      setSessionPoints(prev => prev + pointsEarned)
+      setResults(prev => [...prev, {
+        puzzleId: p.id, correct: true,
+        timeSeconds: mode === 'speedrun' ? SPEED_SECONDS - timeLeft : 0,
+        hintUsed: hintsUsedThisQuestion > 0, pointsEarned,
+      }])
+    } else {
+      setInputShake(true)
+      setTimeout(() => setInputShake(false), 500)
+      if (hintsUsedThisQuestion >= 2) {
+        // Lock out after both hints used and still wrong
+        setWasCorrect(false)
+        setHasAnswered(true)
+        setResults(prev => [...prev, {
+          puzzleId: p.id, correct: false,
+          timeSeconds: mode === 'speedrun' ? SPEED_SECONDS - timeLeft : 0,
+          hintUsed: true, pointsEarned: 0,
+        }])
+      } else {
+        setTextAnswer('')
+      }
+    }
   }
 
-  function handleShowHint() {
-    if (hasAnswered || hintUsed) return
-    setHintUsed(true)
-    setShowHint(true)
+  function handleHint() {
+    if (hintsUsedThisQuestion >= 2) return
+    const p = puzzles[currentIdx]
+    if (!p) return
+    if (sessionPoints < HINT_COST) {
+      setShowInsufficientPoints(true)
+      setTimeout(() => setShowInsufficientPoints(false), 2000)
+      return
+    }
+    setSessionPoints(prev => prev - HINT_COST)
+    const newHintCount = (hintsUsedThisQuestion + 1) as 1 | 2
+    setHintsUsedThisQuestion(newHintCount)
+    setShownOptions(getHintOptions(p, newHintCount))
   }
 
   function handleShare() {
@@ -475,109 +519,53 @@ export default function PuzzleGame() {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const maxScore = puzzles.length * POINTS_CORRECT
+    const maxScore = puzzles.length * POINTS_CORRECT_NO_HINT
     const pct      = maxScore > 0 ? (score / maxScore) * 100 : 0
     const grade    = getGrade(pct)
 
     ctx.fillStyle = '#0a0a0a'
     ctx.fillRect(0, 0, 600, 300)
-
-    // Orange accent stripe
     ctx.fillStyle = '#f97316'
     ctx.fillRect(0, 0, 600, 4)
-
-    // Title
     ctx.fillStyle = '#fb923c'
     ctx.font = 'bold 15px system-ui, sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('ANTBREAK  PUZZLE TEST', 300, 40)
-
-    // Grade emoji
     ctx.font = '52px system-ui, sans-serif'
     ctx.fillText(grade.emoji, 300, 110)
-
-    // Grade title
     ctx.fillStyle = '#fdba74'
     ctx.font = 'bold 22px system-ui, sans-serif'
     ctx.fillText(grade.title, 300, 148)
-
-    // Score
     ctx.fillStyle = '#ffffff'
     ctx.font = 'bold 72px system-ui, monospace'
     ctx.fillText(String(score), 300, 228)
-
-    // Max
     ctx.fillStyle = '#7c2d12'
     ctx.font = '16px system-ui, sans-serif'
     ctx.fillText(`/ ${maxScore} pts`, 300, 258)
-
-    // Watermark
     ctx.fillStyle = '#431407'
     ctx.font = '13px system-ui, sans-serif'
     ctx.fillText('antbreak.com', 300, 291)
 
-    const link   = document.createElement('a')
+    const link    = document.createElement('a')
     link.download = `antbreak-puzzle-${score}.png`
-    link.href    = canvas.toDataURL('image/png')
+    link.href     = canvas.toDataURL('image/png')
     link.click()
   }
 
   // ── Derived ────────────────────────────────────────────────────
 
-  const showDifficulty = mode === 'classic' || mode === 'speedrun'
-  const canStart       = mode !== null
-  const activeMode     = mode ? MODES.find(m => m.id === mode) : null
-  const puzzle         = puzzles[currentIdx] ?? null
+  const canStart   = mode !== null
+  const activeMode = mode ? MODES.find(m => m.id === mode) : null
+  const puzzle     = puzzles[currentIdx] ?? null
 
-  function getOptions(p: AnyPuzzle): string[] {
-    if (p.type === 'sequence')  return puzzleOptions[p.id] ?? []
-    if (p.type === 'oddoneout') return p.items
-    return (p as LogicPuzzle | RebusPuzzle | SpatialPuzzle).options
-  }
-
-  function optionCls(opt: string, correct: string): string {
-    const base = 'rounded-xl py-3 px-4 text-sm font-medium transition-all duration-150 text-left w-full'
-    if (!hasAnswered) {
-      return `${base} bg-zinc-700/80 border border-zinc-500/60 text-white hover:bg-zinc-600 hover:border-orange-400/60 cursor-pointer`
-    }
-    if (opt === selected && opt === correct) {
-      return `${base} bg-green-600/60 border-2 border-green-400 text-white cursor-default`
-    }
-    if (opt === selected && opt !== correct) {
-      return `${base} bg-rose-700/60 border-2 border-rose-400 text-rose-100 cursor-default`
-    }
-    if (opt === correct && selected !== correct) {
-      return `${base} bg-green-900/30 border border-green-600 text-green-300 cursor-default`
-    }
-    return `${base} bg-zinc-700/80 border border-zinc-500/60 text-white opacity-40 cursor-default`
-  }
-
-  function oddItemCls(item: string, correct: string): string {
-    const base = 'rounded-xl px-4 py-3 text-base font-semibold transition-all duration-150'
-    if (!hasAnswered) {
-      return `${base} bg-zinc-700 border border-zinc-500 text-white hover:border-orange-400/60 cursor-pointer`
-    }
-    if (item === selected && item === correct) {
-      return `${base} bg-green-600/60 border-2 border-green-400 text-white cursor-default`
-    }
-    if (item === selected && item !== correct) {
-      return `${base} bg-rose-700/60 border-2 border-rose-400 text-rose-100 cursor-default`
-    }
-    if (item === correct && selected !== correct) {
-      return `${base} bg-green-900/30 border border-green-600 text-green-300 cursor-default`
-    }
-    return `${base} bg-zinc-700 border border-zinc-500 text-white opacity-40 cursor-default`
-  }
-
-  // Results-screen derived values
-  const maxScore    = puzzles.length * POINTS_CORRECT
-  const pct         = maxScore > 0 ? (score / maxScore) * 100 : 0
-  const grade       = getGrade(pct)
-  const lastResult  = results[results.length - 1]
-  const earnedPts   = lastResult?.pointsEarned ?? 0
+  const maxScore      = puzzles.length * POINTS_CORRECT_NO_HINT
+  const pct           = maxScore > 0 ? (score / maxScore) * 100 : 0
+  const grade         = getGrade(pct)
+  const lastResult    = results[results.length - 1]
+  const earnedPts     = lastResult?.pointsEarned ?? 0
   const progressWidth = puzzles.length ? (currentIdx / puzzles.length) * 100 : 0
 
-  const typeOrder = ['sequence', 'logic', 'oddoneout', 'rebus', 'spatial', 'emojidecoder']
+  const typeOrder = ['sequence', 'deduction', 'emojipuzzle', 'spatial']
   const typeBreakdown = typeOrder.map(type => ({
     type,
     correct: results.filter((r, i) => puzzles[i]?.type === type && r?.correct).length,
@@ -623,9 +611,13 @@ export default function PuzzleGame() {
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="flex items-center gap-2 px-5 pt-4 pb-3 shrink-0">
         <Grid2x2 className="h-6 w-6 text-orange-400 shrink-0" />
-        <h1 className={`text-white font-bold flex-1 leading-none ${isFullscreen ? 'text-3xl' : 'text-2xl'}`}>
+        <h1 className={`text-white font-bold leading-none ${isFullscreen ? 'text-3xl' : 'text-2xl'}`}>
           Puzzle Test
         </h1>
+
+        {stage === 'playing' && (
+          <span className="text-orange-300 text-xs font-mono shrink-0 flex-1">💡 {sessionPoints} pts</span>
+        )}
 
         {mode === 'speedrun' && stage === 'playing' && (
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-mono font-bold text-base shrink-0 border ${timerCls(timeLeft)}`}>
@@ -637,17 +629,17 @@ export default function PuzzleGame() {
           <button
             type="button"
             onClick={handleQuit}
-            className="text-orange-900/60 hover:text-rose-400 transition-colors p-1"
+            className="rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-rose-500/50 text-zinc-400 hover:text-rose-400 transition-colors p-1.5 w-8 h-8 flex items-center justify-center"
             aria-label="Quit"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         )}
 
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="text-orange-900/60 hover:text-orange-400 transition-colors p-1"
+          className="rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-orange-500/50 text-zinc-400 hover:text-orange-300 transition-colors p-1.5 w-8 h-8 flex items-center justify-center"
           aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -703,7 +695,6 @@ export default function PuzzleGame() {
 
           {mode && (
             <>
-              {/* ── Category selector ──────────────────────────── */}
               <div className="mb-3">
                 <p className="text-zinc-400 text-xs uppercase tracking-widest text-center mb-2 mt-4">
                   Choose Category
@@ -730,7 +721,6 @@ export default function PuzzleGame() {
                 </div>
               </div>
 
-              {/* ── Difficulty pills ──────────────────────────── */}
               <div className="mb-3">
                 <p className="text-orange-300 text-xs uppercase tracking-widest text-center mb-2">
                   Difficulty
@@ -814,15 +804,21 @@ export default function PuzzleGame() {
 
           {(() => {
             const bs = TYPE_BADGE_STYLES[puzzle.type]
-            return bs ? (
+            if (!bs) return null
+            const subtype = (puzzle as { subtype?: string }).subtype
+            const label = puzzle.type === 'deduction'
+              ? (subtype === 'oddoneout' ? '🎯 ODD ONE OUT' : '🧠 LOGIC DEDUCTION')
+              : bs.label
+            return (
               <span className={`block w-fit mx-auto mt-2 ${bs.bg} border ${bs.border} rounded-full px-3 py-0.5 text-xs font-semibold ${bs.text} shrink-0 tracking-wide`}>
-                {bs.label}
+                {label}
               </span>
-            ) : null
+            )
           })()}
 
-          <div className={`bg-zinc-800/60 border border-zinc-600/40 rounded-2xl mt-3 flex flex-col ${puzzle.type === 'emojidecoder' ? 'p-6' : 'p-5'}`}>
+          <div className={`bg-zinc-800/60 border border-zinc-600/40 rounded-2xl mt-3 flex flex-col ${puzzle.type === 'emojipuzzle' && (puzzle as EmojiPuzzlePuzzle).style === 'symbolic' ? 'p-6' : 'p-5'}`}>
 
+            {/* ── Sequence ── */}
             {puzzle.type === 'sequence' && (() => {
               const p = puzzle as SequencePuzzle
               return (
@@ -841,54 +837,57 @@ export default function PuzzleGame() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-zinc-400 text-xs text-center mb-1 mt-1">What comes next?</p>
+                  <p className="text-zinc-400 text-xs text-center mt-1">What is the missing number?</p>
                 </>
               )
             })()}
 
-            {puzzle.type === 'logic' && (() => {
-              const p = puzzle as LogicPuzzle
-              return (
-                <>
-                  <p className="text-white font-semibold text-sm leading-relaxed mb-3" style={{ fontFamily: 'Georgia, serif' }}>
-                    {p.question}
-                  </p>
-                  {p.clues.length > 0 && (
-                    <div className="bg-zinc-900 rounded-xl p-3 mb-2 space-y-1">
-                      {p.clues.map((clue, i) => (
-                        <p key={`puzzle-${currentIdx}-clue-${i}`} className="text-zinc-300 text-xs">• {clue}</p>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-
-            {puzzle.type === 'oddoneout' && (() => {
+            {/* ── Deduction (logic + odd-one-out) ── */}
+            {puzzle.type === 'deduction' && (() => {
+              if (puzzle.subtype === 'logic') {
+                const p = puzzle as LogicPuzzle
+                return (
+                  <>
+                    <p className="text-white font-semibold text-sm leading-relaxed mb-3" style={{ fontFamily: 'Georgia, serif' }}>
+                      {p.question}
+                    </p>
+                    {p.clues.length > 0 && (
+                      <div className="bg-zinc-900 rounded-xl p-3 mb-2 space-y-1">
+                        {p.clues.map((clue, i) => (
+                          <p key={`puzzle-${currentIdx}-clue-${i}`} className="text-zinc-300 text-xs">• {clue}</p>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )
+              }
               const p = puzzle as OddOneOutPuzzle
               return (
                 <>
                   <p className="text-zinc-400 text-xs text-center mb-3">Which one doesn&apos;t belong?</p>
                   <div className="flex flex-wrap gap-2 justify-center">
                     {p.items.map((item, i) => (
-                      <button
-                        key={`option-${currentIdx}-${i}-${item}`}
-                        type="button"
-                        disabled={hasAnswered}
-                        onClick={() => handleSelect(item)}
-                        className={oddItemCls(item, p.answer)}
+                      <div
+                        key={`item-${currentIdx}-${i}`}
+                        className={[
+                          'rounded-xl px-4 py-3 text-base font-semibold select-none',
+                          hasAnswered && item === p.answer
+                            ? 'bg-green-900/30 border border-green-600 text-green-300'
+                            : 'bg-zinc-700 border border-zinc-500 text-white',
+                        ].join(' ')}
                       >
                         {item}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </>
               )
             })()}
 
-            {puzzle.type === 'rebus' && (() => {
-              const p = puzzle as RebusPuzzle
-              return (
+            {/* ── Emoji Puzzle ── */}
+            {puzzle.type === 'emojipuzzle' && (() => {
+              const p = puzzle as EmojiPuzzlePuzzle
+              return p.style === 'rebus' ? (
                 <>
                   <p className="text-zinc-400 text-xs text-center mb-2">
                     What word or phrase does this represent?
@@ -908,9 +907,27 @@ export default function PuzzleGame() {
                     ))}
                   </div>
                 </>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center justify-center gap-4 flex-wrap my-6 px-4">
+                    {p.parts.map((part, i) => (
+                      <span
+                        key={`emoji-${currentIdx}-${i}`}
+                        className="text-5xl sm:text-6xl leading-none select-none"
+                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+                      >
+                        {part.content}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-orange-300/70 text-sm text-center mb-2">
+                    What does this emoji sequence represent?
+                  </p>
+                </div>
               )
             })()}
 
+            {/* ── Spatial ── */}
             {puzzle.type === 'spatial' && (() => {
               const p = puzzle as SpatialPuzzle
               return (
@@ -923,67 +940,59 @@ export default function PuzzleGame() {
               )
             })()}
 
-            {puzzle.type === 'emojidecoder' && (
-              <div className="flex flex-col items-center">
-
-                {/* Category badge */}
-                <span className="text-xs uppercase tracking-widest font-semibold mb-4 bg-yellow-500/20 border border-yellow-500/40 rounded-full px-3 py-1 text-yellow-300">
-                  😀 {(puzzle as EmojiDecoderPuzzle).category.toUpperCase()}
-                </span>
-
-                {/* Emoji sequence */}
-                <div className="flex items-center justify-center gap-4 flex-wrap my-6 px-4">
-                  {(puzzle as EmojiDecoderPuzzle).emojis.map((emoji, i) => (
-                    <span
-                      key={`emoji-${currentIdx}-${i}`}
-                      className="text-5xl sm:text-6xl leading-none select-none"
-                      style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-                    >
-                      {emoji}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Prompt */}
-                <p className="text-orange-300/70 text-sm text-center mb-6">
-                  What does this emoji sequence represent?
-                </p>
-
-              </div>
+            {/* ── Text input ── */}
+            {!hasAnswered && (
+              <>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={textAnswer}
+                  onChange={e => setTextAnswer(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSubmitText() }}
+                  placeholder={INPUT_PLACEHOLDERS[puzzle.type] ?? 'Type your answer...'}
+                  className={[
+                    'bg-zinc-800 border-2 outline-none rounded-xl px-4 py-3',
+                    'text-white font-medium text-base placeholder:text-zinc-600 w-full mt-4',
+                    'transition-colors duration-150',
+                    inputShake
+                      ? 'border-rose-500 focus:border-rose-500'
+                      : 'border-zinc-600 focus:border-orange-400',
+                  ].join(' ')}
+                  style={{ caretColor: 'orange' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSubmitText}
+                  disabled={!textAnswer.trim()}
+                  className={[
+                    'bg-orange-500 text-white font-bold text-sm rounded-xl px-8 py-2.5 mt-3 w-full transition-all',
+                    textAnswer.trim() ? 'hover:bg-orange-400 cursor-pointer' : 'opacity-40 cursor-not-allowed',
+                  ].join(' ')}
+                >
+                  Submit Answer
+                </button>
+              </>
             )}
 
-            {/* Shared 2×2 options grid (not OddOneOut — its items serve as options) */}
-            {puzzle.type !== 'oddoneout' && (
-              <div className={`${puzzle.type === 'emojidecoder' ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-3'} mt-4`}>
-                {getOptions(puzzle).map((opt, i) => (
-                  <button
-                    key={`option-${currentIdx}-${i}-${opt}`}
-                    type="button"
-                    disabled={hasAnswered}
-                    onClick={() => handleSelect(opt)}
-                    className={optionCls(opt, puzzle.answer)}
-                  >
-                    {opt}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Feedback */}
+            {/* ── Feedback ── */}
             {hasAnswered && (
-              <p className={`font-bold text-sm mt-3 ${
-                timedOut                   ? 'text-rose-400'  :
-                selected === puzzle.answer ? 'text-green-400' : 'text-rose-400'
-              }`}>
-                {timedOut
-                  ? '⏱ Time\'s up!'
-                  : selected === puzzle.answer
-                    ? `✓ Correct! +${earnedPts} pts`
-                    : '✗ Incorrect'}
-              </p>
+              <div className="mt-3">
+                {timedOut ? (
+                  <p className="font-bold text-sm text-rose-400">⏱ Time&apos;s up!</p>
+                ) : wasCorrect ? (
+                  <p className="font-bold text-sm text-green-400">✓ Correct! +{earnedPts} pts</p>
+                ) : (
+                  <>
+                    <p className="font-bold text-sm text-rose-400">✗ Incorrect</p>
+                    <p className="text-zinc-400 text-xs mt-1">
+                      The answer was: <span className="text-white font-semibold">{puzzle.answer}</span>
+                    </p>
+                  </>
+                )}
+              </div>
             )}
 
-            {/* Explanation */}
+            {/* ── Explanation ── */}
             {showExplanation && (
               <div className="bg-zinc-800 rounded-xl p-3 mt-2">
                 <p className="text-orange-200 text-sm">💡 {puzzle.explanation}</p>
@@ -992,21 +1001,52 @@ export default function PuzzleGame() {
 
           </div>
 
-          {/* Hint */}
+          {/* ── Hint area ── */}
           {!hasAnswered && (
-            <div className="mt-2 text-center">
-              {showHint ? (
-                <div className="bg-zinc-800 border border-zinc-600 rounded-xl p-3">
-                  <p className="text-zinc-300 text-xs">{TYPE_HINTS[puzzle.type]}</p>
-                </div>
-              ) : (
+            <div className="mt-3">
+              <div className="flex justify-center">
                 <button
                   type="button"
-                  onClick={handleShowHint}
-                  className="text-orange-300 text-xs underline hover:text-orange-200 transition-colors"
+                  onClick={handleHint}
+                  disabled={hintsUsedThisQuestion >= 2}
+                  className={[
+                    'text-xs rounded-lg px-3 py-1.5 transition-all border',
+                    hintsUsedThisQuestion >= 2
+                      ? 'bg-zinc-800 border-zinc-700 text-zinc-600 opacity-40 cursor-not-allowed'
+                      : sessionPoints < HINT_COST
+                        ? 'bg-zinc-800 border-zinc-700 text-zinc-600 cursor-pointer'
+                        : 'bg-zinc-700 border-zinc-500 text-zinc-300 hover:bg-zinc-600 cursor-pointer',
+                  ].join(' ')}
                 >
-                  💡 Hint {!hintUsed && <span className="text-zinc-500">(costs 2 pts)</span>}
+                  {hintsUsedThisQuestion >= 2 ? '💡 No more hints' : `💡 Hint (${sessionPoints} pts)`}
                 </button>
+              </div>
+
+              {showInsufficientPoints && (
+                <div className="bg-zinc-800 border border-rose-700/50 rounded-lg px-3 py-2 text-rose-300 text-xs text-center mt-2">
+                  Not enough points. Answer questions to earn points first!
+                </div>
+              )}
+
+              {shownOptions.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-zinc-500 text-xs mb-1 text-center">Choose from:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {shownOptions.map((opt, i) => (
+                      <button
+                        key={`hint-opt-${currentIdx}-${i}`}
+                        type="button"
+                        onClick={() => {
+                          setTextAnswer(opt)
+                          inputRef.current?.focus()
+                        }}
+                        className="bg-zinc-700 border border-zinc-500 text-zinc-200 text-sm rounded-lg px-4 py-2 hover:bg-zinc-600 hover:border-orange-400/60 cursor-pointer transition-all"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -1020,32 +1060,28 @@ export default function PuzzleGame() {
 
           <p className="text-zinc-600 text-center text-sm mb-4">◆ ─────── 🧩 ─────── ◆</p>
 
-          {/* Score */}
           <div className="text-center mb-2">
             <span className="text-orange-400 text-6xl font-bold">{score}</span>
             <span className="text-zinc-400 text-xl ml-2">/ {maxScore}</span>
           </div>
 
-          {/* Grade */}
           <div className="text-center mb-3">
             <p className="text-4xl">{grade.emoji}</p>
             <p className="text-orange-200 text-xl font-bold mt-1">{grade.title}</p>
           </div>
 
-          {/* New PB */}
           {isNewPB && (
             <p className="text-orange-300 font-bold text-center text-sm mb-3">✨ New Personal Best!</p>
           )}
 
-          {/* Per-type breakdown */}
           <div className="bg-zinc-800 rounded-xl p-4 mb-3 space-y-1">
             {typeBreakdown.map(b => (
               <div key={`tb-${b.type}`} className="flex items-center justify-between text-xs font-mono">
                 <span className="text-zinc-300">{TYPE_LABELS[b.type]?.icon} {TYPE_LABELS[b.type]?.label}</span>
                 <span className={
-                  b.total === 0 ? 'text-orange-800/40' :
-                  b.correct === b.total ? 'text-green-400' :
-                  b.correct > 0 ? 'text-orange-400' : 'text-rose-400'
+                  b.total === 0      ? 'text-orange-800/40' :
+                  b.correct === b.total ? 'text-green-400'  :
+                  b.correct > 0      ? 'text-orange-400'    : 'text-rose-400'
                 }>
                   {b.correct}/{b.total} {b.correct === b.total ? '✓' : ''}
                 </span>
@@ -1053,7 +1089,6 @@ export default function PuzzleGame() {
             ))}
           </div>
 
-          {/* Review first wrong answer */}
           {firstWrongPuzzle && (
             <div className="bg-zinc-800 rounded-xl p-4 mb-3">
               <p className="text-zinc-400 text-xs mb-2">📖 Review:</p>
@@ -1065,7 +1100,6 @@ export default function PuzzleGame() {
             </div>
           )}
 
-          {/* Share */}
           <button
             type="button"
             onClick={handleShare}
@@ -1074,7 +1108,6 @@ export default function PuzzleGame() {
             📤 Share Result
           </button>
 
-          {/* Action buttons */}
           <div className="flex gap-3">
             <button
               type="button"
@@ -1092,7 +1125,6 @@ export default function PuzzleGame() {
             </button>
           </div>
 
-          {/* How to play guide */}
           <div className="mt-4">
             <button
               type="button"
