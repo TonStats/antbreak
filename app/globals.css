@@ -344,6 +344,22 @@
   flex-direction: column !important;
 }
 
+/* Path Connector fullscreen */
+:fullscreen .path-connector-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .path-connector-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 @keyframes best-flash {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.25; }

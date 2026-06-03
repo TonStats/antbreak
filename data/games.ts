@@ -442,5 +442,42 @@ export const GAMES: Game[] = [
       allowFullscreen: true,
     },
   },
+  {
+    id: 'path-connector',
+    name: 'Path Connector',
+    slug: 'path-connector',
+    category: 'original-games',
+    description:
+      'Draw paths to connect matching colored dots on a grid. ' +
+      'Fill every cell without paths crossing. ' +
+      '200 puzzle levels plus a reaction mode where speed matters.',
+    howToPlay: [
+      'Click a colored dot to start drawing',
+      'Drag through the grid to connect it to its matching dot',
+      'Fill every cell to complete the puzzle',
+      'Paths cannot cross each other',
+      'Click any path to clear it and redraw',
+    ],
+    tips: [
+      'Start with dots in corners — they have fewer path options',
+      'Count available cells to plan how paths must fill the grid',
+      'In Reaction mode solve smaller puzzles first to build time',
+    ],
+    thumbnail: '/thumbnails/path-connector.webp',
+    gameUrl: '/games/path-connector',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-06-03',
+    tags: ['puzzle', 'path', 'logic', 'connect', 'spatial'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]
