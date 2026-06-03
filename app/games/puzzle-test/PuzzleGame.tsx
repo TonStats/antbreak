@@ -7,7 +7,11 @@ import type {
   SequencePuzzle, LogicPuzzle, OddOneOutPuzzle, RebusPuzzle, SpatialPuzzle,
   EmojiDecoderPuzzle,
 } from '@/types/puzzle'
-import { getPuzzles } from '@/data/puzzleData'
+import {
+  getPuzzles,
+  SEQUENCE_PUZZLES, LOGIC_PUZZLES, ODD_ONE_OUT_PUZZLES,
+  REBUS_PUZZLES, SPATIAL_PUZZLES, EMOJI_DECODER_PUZZLES,
+} from '@/data/puzzleData'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,6 +43,16 @@ const PUZZLE_TYPE_BADGES = [
   { icon: '🔷', label: 'Spatial', bg: 'bg-pink-500/20',   text: 'text-pink-300',   border: 'border-pink-500/30'   },
   { icon: '😀', label: 'Emoji',   bg: 'bg-yellow-500/20', text: 'text-yellow-300', border: 'border-yellow-500/30' },
 ]
+
+const CATEGORY_OPTIONS = [
+  { id: 'all',          icon: '',   label: 'All Types',     selBg: 'bg-orange-500',  selText: 'text-white',      selBorder: 'border-orange-400' },
+  { id: 'sequence',     icon: '🔢', label: 'Sequence',      selBg: 'bg-blue-600',    selText: 'text-white',      selBorder: 'border-blue-500'   },
+  { id: 'logic',        icon: '🧠', label: 'Logic',         selBg: 'bg-purple-600',  selText: 'text-white',      selBorder: 'border-purple-500' },
+  { id: 'oddoneout',    icon: '🎯', label: 'Odd One Out',   selBg: 'bg-green-600',   selText: 'text-white',      selBorder: 'border-green-500'  },
+  { id: 'rebus',        icon: '🔤', label: 'Rebus',         selBg: 'bg-cyan-600',    selText: 'text-white',      selBorder: 'border-cyan-500'   },
+  { id: 'spatial',      icon: '🔷', label: 'Spatial',       selBg: 'bg-pink-600',    selText: 'text-white',      selBorder: 'border-pink-500'   },
+  { id: 'emojidecoder', icon: '😀', label: 'Emoji Decoder', selBg: 'bg-yellow-500',  selText: 'text-yellow-900', selBorder: 'border-yellow-400' },
+] as const
 
 const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
   sequence:     { icon: '🔢', label: 'Number Sequence' },
@@ -150,6 +164,26 @@ function getQuestionText(p: AnyPuzzle): string {
   return ''
 }
 
+function getFilteredPuzzles(
+  count: number,
+  difficulty: PuzzleDifficulty,
+  category: string,
+): AnyPuzzle[] {
+  if (category === 'all') return getPuzzles(count, difficulty)
+  const pool: AnyPuzzle[] = [
+    ...SEQUENCE_PUZZLES,
+    ...LOGIC_PUZZLES,
+    ...ODD_ONE_OUT_PUZZLES,
+    ...REBUS_PUZZLES,
+    ...SPATIAL_PUZZLES,
+    ...EMOJI_DECODER_PUZZLES,
+  ]
+  return pool
+    .filter(p => p.type === category && p.difficulty === difficulty)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count)
+}
+
 // ─── Spatial visual aid ────────────────────────────────────────────────────────
 
 function SpatialVisual({ shapeDescription }: { shapeDescription: string }) {
@@ -218,12 +252,13 @@ function SpatialVisual({ shapeDescription }: { shapeDescription: string }) {
 export default function PuzzleGame() {
 
   // ── Setup state ────────────────────────────────────────────────
-  const [stage,        setStage]        = useState<Stage>('setup')
-  const [mode,         setMode]         = useState<PuzzleMode | null>(null)
-  const [difficulty,   setDifficulty]   = useState<PuzzleDifficulty>('medium')
-  const [bestScore,    setBestScore]    = useState<string | null>(null)
-  const [showHowTo,    setShowHowTo]    = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [stage,            setStage]            = useState<Stage>('setup')
+  const [mode,             setMode]             = useState<PuzzleMode | null>(null)
+  const [difficulty,       setDifficulty]       = useState<PuzzleDifficulty>('medium')
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [bestScore,        setBestScore]        = useState<string | null>(null)
+  const [showHowTo,        setShowHowTo]        = useState(false)
+  const [isFullscreen,     setIsFullscreen]     = useState(false)
 
   // ── Game state ─────────────────────────────────────────────────
   const [puzzles,         setPuzzles]         = useState<AnyPuzzle[]>([])
@@ -246,6 +281,11 @@ export default function PuzzleGame() {
   // ── Refs ───────────────────────────────────────────────────────
   const cardRef    = useRef<HTMLDivElement>(null)
   const pbSavedRef = useRef(false)
+
+  // ── Reset category when mode changes ──────────────────────────
+  useEffect(() => {
+    setSelectedCategory('all')
+  }, [mode])
 
   // ── Best score updates with mode / difficulty ──────────────────
   useEffect(() => {
@@ -358,7 +398,11 @@ export default function PuzzleGame() {
 
   function handleStart() {
     if (!mode) return
-    const qs = getPuzzles(mode === 'classic' ? CLASSIC_COUNT : SPEEDRUN_COUNT, difficulty)
+    const qs = getFilteredPuzzles(
+      mode === 'classic' ? CLASSIC_COUNT : SPEEDRUN_COUNT,
+      difficulty,
+      selectedCategory,
+    )
 
     const opts: Record<string, string[]> = {}
     for (const q of qs) {
@@ -657,38 +701,60 @@ export default function PuzzleGame() {
             ))}
           </div>
 
-          {showDifficulty && (
-            <div className="mb-3">
-              <p className="text-orange-300 text-xs uppercase tracking-widest text-center mb-2">
-                Difficulty
-              </p>
-              <div className="flex justify-center gap-2">
-                {DIFFICULTIES.map(d => (
-                  <button
-                    key={`diff-${d.id}`}
-                    type="button"
-                    onClick={() => setDifficulty(d.id)}
-                    className={[
-                      'rounded-full px-4 py-1 text-xs transition-all border',
-                      difficulty === d.id
-                        ? d.active
-                        : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-orange-500/50 hover:text-white',
-                    ].join(' ')}
-                  >
-                    {d.label}
-                  </button>
-                ))}
+          {mode && (
+            <>
+              {/* ── Category selector ──────────────────────────── */}
+              <div className="mb-3">
+                <p className="text-zinc-400 text-xs uppercase tracking-widest text-center mb-2 mt-4">
+                  Choose Category
+                </p>
+                <div className="flex flex-wrap justify-center gap-1.5">
+                  {CATEGORY_OPTIONS.map(cat => {
+                    const sel = selectedCategory === cat.id
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={[
+                          'rounded-full px-3 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-150 border',
+                          sel
+                            ? `${cat.selBg} ${cat.selText} ${cat.selBorder}`
+                            : 'bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700',
+                        ].join(' ')}
+                      >
+                        {cat.icon ? `${cat.icon} ` : ''}{cat.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
 
-          <div className="flex flex-wrap justify-center gap-1.5 mt-3 mb-3">
-            {PUZZLE_TYPE_BADGES.map(t => (
-              <span key={t.label} className={`${t.bg} ${t.text} border ${t.border} rounded-full px-2 py-0.5 text-xs`}>
-                {t.icon} {t.label}
-              </span>
-            ))}
-          </div>
+              {/* ── Difficulty pills ──────────────────────────── */}
+              <div className="mb-3">
+                <p className="text-orange-300 text-xs uppercase tracking-widest text-center mb-2">
+                  Difficulty
+                </p>
+                <div className="flex justify-center gap-2">
+                  {DIFFICULTIES.map(d => (
+                    <button
+                      key={`diff-${d.id}`}
+                      type="button"
+                      onClick={() => setDifficulty(d.id)}
+                      className={[
+                        'rounded-full px-4 py-1 text-xs transition-all border',
+                        difficulty === d.id
+                          ? d.active
+                          : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-orange-500/50 hover:text-white',
+                      ].join(' ')}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           {bestScore && activeMode && (
             <p className="text-zinc-400 text-xs text-center mt-1">
