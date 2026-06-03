@@ -405,5 +405,42 @@ export const GAMES: Game[] = [
       allowFullscreen: true,
     },
   },
+  {
+    id: 'word-guess',
+    name: 'Word Guess',
+    slug: 'word-guess',
+    category: 'original-games',
+    description:
+      'Guess the hidden word using letter-by-letter feedback. ' +
+      'Words range from 4 to 10 letters across multiple difficulty levels. ' +
+      'Race the clock in Speed Guess mode.',
+    howToPlay: [
+      'Type letters to fill in your guess',
+      'Press Enter to submit your guess',
+      'Green means correct letter and correct position',
+      'Yellow means correct letter but wrong position',
+      'Gray means the letter is not in the word at all',
+    ],
+    tips: [
+      'Start with vowel-heavy words to map the vowels quickly',
+      'Use what you know — green letters stay in position on every guess',
+      'In Speed mode prioritise shorter words for quick wins',
+    ],
+    thumbnail: '/thumbnails/word-guess.webp',
+    gameUrl: '/games/word-guess',
+    playCount: 0,
+    featured: true,
+    isOriginal: true,
+    source: 'original',
+    dateAdded: '2026-06-02',
+    tags: ['word', 'guess', 'vocabulary', 'puzzle', 'wordle'],
+    iframeSettings: {
+      width: 960,
+      height: 600,
+      aspectRatio: '16:9',
+      paddingTop: '62.5%',
+      allowFullscreen: true,
+    },
+  },
   ...GAMEMONETIZE_GAMES,
 ]

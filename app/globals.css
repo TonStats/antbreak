@@ -304,6 +304,46 @@
   flex-direction: column !important;
 }
 
+/* Word Guess — cell animations */
+@keyframes pop {
+  0%   { transform: scale(1);    }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1);    }
+}
+.cell-pop { animation: pop 0.1s ease-in-out; }
+
+@keyframes rowShake {
+  0%,100% { transform: translateX(0);    }
+  20%,60% { transform: translateX(-6px); }
+  40%,80% { transform: translateX(6px);  }
+}
+.row-shake { animation: rowShake 0.4s ease-in-out; }
+
+@keyframes cellFlip {
+  0%   { transform: rotateX(0deg);   }
+  50%  { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg);   }
+}
+.cell-flip { animation: cellFlip 0.5s ease-in-out both; }
+
+.float-up { animation: floatUp 0.8s ease-out forwards; }
+
+/* Word Guess fullscreen */
+:fullscreen .word-guess-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .word-guess-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 @keyframes best-flash {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.25; }
