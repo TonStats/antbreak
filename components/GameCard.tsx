@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { Heart, Gamepad2 } from 'lucide-react'
 import { useState } from 'react'
 import { CATEGORIES } from '@/data/categories'
 import { useUser } from '@/context/UserContext'
@@ -40,7 +40,7 @@ export default function GameCard({ game }: { game: Game }) {
       >
         {/* ── Thumbnail ─────────────────────────────────────────────── */}
         <div className="relative aspect-video overflow-hidden rounded-t-2xl bg-zinc-200 dark:bg-zinc-800">
-          {!imgFailed ? (
+          {!imgFailed && game.thumbnail ? (
             <Image
               src={game.thumbnail}
               alt={`${game.name} thumbnail`}
@@ -53,14 +53,13 @@ export default function GameCard({ game }: { game: Game }) {
               onError={() => setImgFailed(true)}
             />
           ) : (
-            /* Fallback gradient when thumbnail is missing */
-            <div
-              className={[
-                'absolute inset-0',
-                category?.color ?? 'bg-zinc-400',
-                'opacity-40',
-              ].join(' ')}
-            />
+            /* Fallback when thumbnail is empty or failed to load */
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-800">
+              <Gamepad2 className="h-8 w-8 text-zinc-400 dark:text-zinc-600" />
+              <span className="line-clamp-1 px-4 text-xs font-medium text-zinc-500 dark:text-zinc-500">
+                {game.name}
+              </span>
+            </div>
           )}
 
           {/* Hover overlay — shows play intent; iframe loads only on navigate */}

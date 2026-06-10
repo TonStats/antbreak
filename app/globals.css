@@ -383,3 +383,42 @@
 .animate-best-flash {
   animation: best-flash 0.4s ease-in-out 3;
 }
+
+/* Dodge Master fullscreen */
+:fullscreen .dodge-master-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  background: #000000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+:-webkit-full-screen .dodge-master-card {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Scanline CRT overlay */
+.scanlines {
+  position: relative;
+}
+.scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
